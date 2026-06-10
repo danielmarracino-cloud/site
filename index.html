@@ -1,828 +1,1236 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Athena — Procreate for polyhedra</title>
-<meta name="description" content="Athena is a 3D art app for iPad. Summon mathematical solids, shape them with light and motion, and capture the result." />
-<style>
-  :root{
-    --void:#06070d; --void-2:#0a0c14; --panel:#0c0e17;
-    --ink:#f5f6fa; --ink-dim:#aab0c2; --ink-faint:#727a90;
-    --cyan:#5ac8fa; --blue:#0a84ff; --violet:#bf5af2; --pink:#ff375f; --green:#30d158; --amber:#ffd60a;
-    --glass-fill:rgba(255,255,255,0.055); --glass-fill-strong:rgba(255,255,255,0.09);
-    --glass-edge:rgba(255,255,255,0.16); --glass-edge-bright:rgba(255,255,255,0.34);
-    --glass-shadow:rgba(0,0,0,0.5);
-    --sel:#5ac8fa; /* app selection outline */
-    --r-pill:999px; --r-card:26px; --r-lg:34px;
-    --maxw:1160px; --ease:cubic-bezier(.22,.61,.36,1);
-    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  <html lang="en">
+  <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#06070d" />
+  <title>Athena — Sculpt with the shapes of mathematics</title>
+  <meta name="description" content="Athena is an interactive 3D art studio for iPad. Summon the Platonic, Archimedean, 
+  Catalan, Kepler–Poinsot, Goldberg, and Johnson solids — then spin, explode, and set them aglow." />
+  <meta property="og:title" content="Athena — Sculpt with the shapes of mathematics" />
+  <meta property="og:description" content="An interactive 3D art studio for iPad. 47 mathematical solids, live effects, 
+  glowing auras, zero dependencies." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9z
+  dmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjY0IiB5Mj0iNj
+  QiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjNWVlN2Q2Ii8+CiAgICAgIDxz
+  dG9wIG9mZnNldD0iLjUiIHN0b3AtY29sb3I9IiM3YzliZmYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZmY4ZmQwIi8+CiAgIC
+  A8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0iIzBhMGMxNiIvPgogIDxn
+  IGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnKSIgc3Ryb2tlLXdpZHRoPSIyLjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgogICAgPHBhdGggZD0iTT
+  MyIDggTDU0IDMyIEwzMiA1NiBMMTAgMzIgWiIvPgogICAgPHBhdGggZD0iTTMyIDggTDMyIDU2IE0xMCAzMiBMNTQgMzIiLz4KICAgIDxwYXRoIGQ9Ik0z
+  MiA4IEwyMSAzMiBMMzIgNTYgTDQzIDMyIFoiLz4KICA8L2c+Cjwvc3ZnPgo=" />
+  <style>
+  /* ===========================================================================
+     Athena — Liquid Glass theme
+     =========================================================================== */
+  :root {
+    --bg:        #06070d;
+    --bg-2:      #0a0c16;
+    --ink:       #eef1ff;
+    --ink-dim:   #9aa3c4;
+    --ink-faint: #6b7396;
+    --teal:   #5ee7d6;
+    --blue:   #7c9bff;
+    --violet: #b58bff;
+    --pink:   #ff8fd0;
+    --gold:   #ffd479;
+    --mint:   #9affc8;
+    --glass-bg:     rgba(255,255,255,0.055);
+    --glass-bg-2:   rgba(255,255,255,0.085);
+    --glass-stroke: rgba(255,255,255,0.14);
+    --glass-hi:     rgba(255,255,255,0.55);
+    --blur:         22px;
+    --grad: linear-gradient(115deg, var(--teal) 0%, var(--blue) 38%, var(--violet) 66%, var(--pink) 100%);
+    --shadow-lg: 0 24px 60px -20px rgba(0,0,0,.7), 0 8px 24px -12px rgba(0,0,0,.5);
+    --radius: 26px;
+    --maxw: 1200px;
+    --ease: cubic-bezier(.22,.7,.27,1);
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",system-ui,sans-serif;
-    background:var(--void); color:var(--ink); line-height:1.5; -webkit-font-smoothing:antialiased;
-    overflow-x:hidden; letter-spacing:-0.01em;
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                 system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink); background: var(--bg); line-height: 1.5; overflow-x: hidden;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; letter-spacing: -0.01em;
   }
-  a{color:inherit;text-decoration:none}
-  canvas{display:block}
-
-  /* ambient background */
-  .scene-bg{position:fixed;inset:0;z-index:-2;background:
-    radial-gradient(120% 90% at 50% -10%, #11131f 0%, var(--void-2) 38%, var(--void) 78%);}
-  .aurora{position:fixed;inset:-20% -10% 0 -10%;z-index:-1;pointer-events:none;filter:blur(80px) saturate(1.2);opacity:.5}
-  .aurora b{position:absolute;width:46vw;height:46vw;border-radius:50%;mix-blend-mode:screen;animation:drift 26s var(--ease) infinite alternate}
-  .aurora b:nth-child(1){background:var(--violet);top:-8%;left:8%}
-  .aurora b:nth-child(2){background:var(--cyan);top:18%;right:4%;animation-delay:-8s}
-  .aurora b:nth-child(3){background:var(--pink);bottom:-12%;left:32%;animation-delay:-15s;opacity:.65}
-  @keyframes drift{to{transform:translate3d(6%,8%,0) scale(1.15)}}
-
-  /* glass primitive */
-  .glass{position:relative;background:var(--glass-fill);
-    -webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);
-    border:1px solid var(--glass-edge);
-    box-shadow:0 1px 0 0 var(--glass-edge-bright) inset,0 10px 40px -12px var(--glass-shadow),0 1px 2px rgba(0,0,0,.4);
-    overflow:hidden;}
-  .glass::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
-    background:linear-gradient(135deg,rgba(255,255,255,.18),rgba(255,255,255,0) 42%);opacity:.9;mix-blend-mode:screen;}
-  .glass::after{content:"";position:absolute;left:-30%;top:-60%;width:60%;height:160%;pointer-events:none;
-    background:linear-gradient(100deg,transparent,rgba(255,255,255,.22),transparent);
-    transform:rotate(8deg);transition:transform .9s var(--ease);opacity:.5;}
-  .glass:hover::after{transform:translateX(260%) rotate(8deg)}
-
-  /* nav */
-  .nav-wrap{position:fixed;top:18px;left:0;right:0;z-index:50;display:flex;justify-content:center;padding:0 18px}
-  .nav{width:100%;max-width:var(--maxw);display:flex;align-items:center;gap:18px;padding:11px 14px 11px 20px;border-radius:var(--r-pill);}
-  .brand{display:flex;align-items:center;gap:11px;font-weight:600;font-size:17px;letter-spacing:-.02em}
-  .brand .mark{width:26px;height:26px;flex:0 0 auto;filter:drop-shadow(0 0 8px rgba(90,200,250,.5))}
-  .nav-links{display:flex;gap:4px;margin-left:auto}
-  .nav-links a{padding:8px 14px;border-radius:var(--r-pill);font-size:14.5px;color:var(--ink-dim);transition:.25s var(--ease)}
-  .nav-links a:hover{color:var(--ink);background:rgba(255,255,255,.07)}
-  .nav-cta{padding:9px 17px;border-radius:var(--r-pill);font-size:14.5px;font-weight:560;color:#04121b;
-    background:linear-gradient(180deg,#eafaff,#a6e4ff);
-    box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 6px 18px -6px rgba(90,200,250,.7);transition:.25s var(--ease);white-space:nowrap;}
-  .nav-cta:hover{transform:translateY(-1px);filter:brightness(1.05)}
-  .nav-burger{display:none}
-  .mobile-menu{display:none}
-  @media(max-width:920px){
-    .mobile-menu{display:flex;flex-direction:column;gap:4px;position:fixed;z-index:49;top:84px;left:18px;right:18px;
-      padding:10px;border-radius:24px;opacity:0;transform:translateY(-8px) scale(.98);pointer-events:none;transition:.3s var(--ease);}
-    .mobile-menu.open{opacity:1;transform:none;pointer-events:auto}
-    .mobile-menu a{padding:13px 16px;border-radius:16px;color:var(--ink-dim);font-size:16px;font-weight:500}
-    .mobile-menu a:active,.mobile-menu a:hover{background:rgba(255,255,255,.07);color:var(--ink)}
+  a { color: inherit; text-decoration: none; }
+  canvas { display: block; }
+  /* --- Ambient background --- */
+  .bg-canvas { position: fixed; inset: 0; z-index: 0; width: 100vw; height: 100vh; pointer-events: none; }
+  .aurora { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .aurora .blob {
+    position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55; mix-blend-mode: screen;
+    animation: drift 26s var(--ease) infinite alternate;
   }
-
-  section{position:relative}
-  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
-  .pad{padding:clamp(84px,12vh,140px) 0}
-  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;letter-spacing:.08em;
-    text-transform:uppercase;color:var(--ink-dim);padding:7px 14px;border-radius:var(--r-pill);
-    background:rgba(255,255,255,.05);border:1px solid var(--glass-edge);
-    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
-  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
-  .head{max-width:640px;margin-bottom:46px}
-  .head h2{font-size:clamp(30px,4.6vw,50px);line-height:1.02;letter-spacing:-.03em;font-weight:660;margin-top:18px}
-  .head p{color:var(--ink-dim);margin-top:16px;font-size:17.5px;font-weight:420}
-  .grad{background:linear-gradient(100deg,var(--cyan),var(--violet) 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;}
-
-  /* ===== HERO (interactive) ===== */
-  .hero{min-height:100svh;display:flex;align-items:center;padding-top:118px;padding-bottom:46px}
-  #stage{position:absolute;inset:0;z-index:0;width:100%;height:100%}
-  .hero .wrap{position:relative;z-index:2;width:100%}
-  .hero-inner{max-width:620px}
-  h1{font-size:clamp(42px,7.6vw,86px);line-height:.96;font-weight:680;letter-spacing:-.035em;margin:22px 0 0}
-  .sub{font-size:clamp(17px,2.2vw,20px);color:var(--ink-dim);margin-top:22px;max-width:36ch;font-weight:420}
-
-  /* live control dock — mirrors the app's tool strip */
-  .dock{margin-top:34px;border-radius:24px;padding:16px 18px;display:flex;flex-direction:column;gap:14px;max-width:680px}
-  .dock-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .dock-label{font-size:11px;font-weight:640;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);width:100%;}
-  .chip{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:var(--r-pill);font-size:13.5px;font-weight:520;
-    color:var(--ink-dim);background:rgba(255,255,255,.05);border:1px solid var(--glass-edge);cursor:pointer;transition:.2s var(--ease);}
-  .chip:hover{color:var(--ink);background:rgba(255,255,255,.09)}
-  .chip.on{color:#04121b;background:linear-gradient(180deg,#eafaff,#a6e4ff);border-color:transparent;box-shadow:0 0 0 1px rgba(90,200,250,.5),0 4px 14px -4px rgba(90,200,250,.6)}
-  .chip svg{width:15px;height:15px}
-  .ctrl{display:flex;align-items:center;gap:11px;flex:1 1 200px;min-width:170px}
-  .ctrl .cl{font-size:12.5px;color:var(--ink-dim);width:60px;flex:0 0 auto}
-  input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;flex:1;
-    background:rgba(255,255,255,.16);outline:none;cursor:pointer}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;
-    background:linear-gradient(180deg,#fff,#cfeaff);box-shadow:0 0 0 1px rgba(90,200,250,.5),0 2px 8px rgba(0,0,0,.5);cursor:pointer}
-  input[type=range]::-moz-range-thumb{width:17px;height:17px;border:none;border-radius:50%;
-    background:linear-gradient(180deg,#fff,#cfeaff);box-shadow:0 0 0 1px rgba(90,200,250,.5),0 2px 8px rgba(0,0,0,.5);cursor:pointer}
-  .toggle{display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px;color:var(--ink-dim);user-select:none}
-  .toggle .sw{width:40px;height:23px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid var(--glass-edge);position:relative;transition:.25s var(--ease)}
-  .toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.25s var(--ease)}
-  .toggle.on .sw{background:var(--green);border-color:transparent}
-  .toggle.on .sw::after{transform:translateX(17px)}
-  .toggle.on{color:var(--ink)}
-  .menu{display:inline-flex;align-items:center;gap:8px}
-  .menu .cl{font-size:12.5px;color:var(--ink-dim)}
-  select.sel-menu{-webkit-appearance:none;appearance:none;font:inherit;font-size:13px;font-weight:520;color:var(--ink);
-    padding:8px 30px 8px 13px;border-radius:var(--r-pill);cursor:pointer;
-    background:rgba(255,255,255,.05) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235ac8fa' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 11px center;
-    border:1px solid var(--glass-edge);outline:none;transition:.2s var(--ease)}
-  select.sel-menu:hover{background-color:rgba(255,255,255,.09)}
-  select.sel-menu option{background:#11131c;color:var(--ink)}
-  .hint{font-size:12px;color:var(--ink-faint);margin-top:2px}
-  .facts{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--glass-edge);padding-top:13px}
-  .fact{display:inline-flex;align-items:baseline;gap:7px;padding:7px 12px;border-radius:var(--r-pill);font-size:12.5px;
-    background:rgba(255,255,255,.04);border:1px solid var(--glass-edge);color:var(--ink)}
-  .fact .fk{font-size:10.5px;font-weight:640;letter-spacing:.07em;text-transform:uppercase;color:var(--cyan)}
-  .fact .fv{font-variant-numeric:tabular-nums;color:var(--ink)}
-  /* accurate families grid */
-  .fams{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:8px}
-  .famc{padding:20px 18px 22px;border-radius:20px;transition:.35s var(--ease)}
-  .famc:hover{transform:translateY(-4px)}
-  .famc .dotc{width:12px;height:12px;border-radius:50%;margin-bottom:14px}
-  .famc h4{font-size:15.5px;font-weight:600;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-  .famc h4 small{font-size:12px;font-weight:600;color:var(--ink-faint);font-variant-numeric:tabular-nums}
-  .famc p{font-size:13px;color:var(--ink-dim);margin-top:8px;font-weight:420}
-
-  /* ===== pillars ===== */
-  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .pillar{padding:30px 28px 34px;border-radius:var(--r-card);transition:.4s var(--ease)}
-  .pillar:hover{transform:translateY(-5px)}
-  .pillar .ic{width:50px;height:50px;border-radius:15px;display:grid;place-items:center;margin-bottom:20px;background:rgba(255,255,255,.06);border:1px solid var(--glass-edge)}
-  .pillar h3{font-size:21px;letter-spacing:-.02em;font-weight:600}
-  .pillar p{color:var(--ink-dim);margin-top:10px;font-size:15.5px;font-weight:420}
-
-  /* ===== app interface mockup ===== */
-  .device{position:relative;border-radius:30px;padding:14px;border:1px solid var(--glass-edge);
-    background:linear-gradient(180deg,#15161f,#0a0b11);box-shadow:0 40px 120px -40px #000, 0 0 0 1px rgba(255,255,255,.04) inset;}
-  .screen{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:4/3;background:radial-gradient(110% 90% at 50% 0%,#0c0e18,#050609);}
-  #appscene{position:absolute;inset:0;width:100%;height:100%}
-  .ov{position:absolute;z-index:3}
-  .ov-pill{border-radius:var(--r-pill);font-size:12px;font-weight:540;padding:8px 13px;display:flex;align-items:center;gap:7px;color:var(--ink);
-    background:rgba(20,22,30,.55);border:1px solid var(--glass-edge);-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);
-    box-shadow:0 1px 0 var(--glass-edge-bright) inset,0 8px 24px -8px rgba(0,0,0,.6)}
-  .meta{top:14px;left:14px;gap:10px;display:flex}
-  .topright{top:14px;right:14px;display:flex;gap:8px}
-  .rbtn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--ink);
-    background:rgba(20,22,30,.55);border:1px solid var(--glass-edge);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-  .chips-row{top:62px;left:14px;display:flex;gap:8px}
-  .gchip{font-size:11.5px;font-weight:560;padding:6px 11px;border-radius:var(--r-pill);color:var(--ink-dim);
-    background:rgba(20,22,30,.5);border:1px solid var(--glass-edge)}
-  .gchip.sel{color:var(--ink);border-color:var(--sel);box-shadow:0 0 0 1px var(--sel),0 0 14px -4px var(--sel)}
-  .dock-right{top:50%;right:14px;transform:translateY(-50%);width:150px;padding:14px;border-radius:18px;display:flex;flex-direction:column;gap:13px;
-    background:rgba(16,18,26,.62);border:1px solid var(--glass-edge);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);
-    box-shadow:0 1px 0 var(--glass-edge-bright) inset,0 16px 40px -16px rgba(0,0,0,.7)}
-  .dock-right .t{font-size:11px;font-weight:640;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan)}
-  .fakeslide{display:flex;flex-direction:column;gap:6px}
-  .fakeslide span{font-size:11px;color:var(--ink-dim)}
-  .fakeslide .track{height:4px;border-radius:4px;background:rgba(255,255,255,.14);position:relative}
-  .fakeslide .track i{position:absolute;top:-6px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(90,200,250,.5)}
-  .menu-pop{left:14px;top:98px;width:140px;padding:6px;border-radius:14px;z-index:4;
-    background:rgba(16,18,26,.7);border:1px solid var(--glass-edge);
-    -webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);
-    box-shadow:0 1px 0 var(--glass-edge-bright) inset,0 16px 40px -16px rgba(0,0,0,.7)}
-  .menu-pop .mh{font-size:10px;font-weight:640;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan);padding:5px 8px 6px}
-  .menu-pop .mi{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;border-radius:9px;font-size:12px;color:var(--ink-dim)}
-  .menu-pop .mi.on{color:var(--ink);background:rgba(90,200,250,.13)}
-  .menu-pop .mi.on::after{content:"✓";color:var(--cyan);font-size:11px}
-  .menu-pop .sw-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:middle}
-  .toolstrip{bottom:60px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:7px;border-radius:var(--r-pill);
-    background:rgba(16,18,26,.6);border:1px solid var(--glass-edge);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
-  .tool{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ink-dim);transition:.2s}
-  .tool.sel{color:#04121b;background:linear-gradient(180deg,#eafaff,#a6e4ff)}
-  .tool svg{width:19px;height:19px}
-  .botbar{bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:5px}
-  .bb{font-size:11px;font-weight:540;padding:7px 12px;border-radius:var(--r-pill);color:var(--ink-dim);
-    background:rgba(20,22,30,.5);border:1px solid var(--glass-edge);display:flex;align-items:center;gap:6px}
-  .iface-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
-  .iface-copy h2{font-size:clamp(28px,4vw,44px);letter-spacing:-.03em;line-height:1.04;font-weight:660;margin-top:18px}
-  .iface-copy p{color:var(--ink-dim);margin-top:16px;font-size:16.5px;font-weight:420;max-width:42ch}
-  .iface-list{margin-top:24px;display:flex;flex-direction:column;gap:13px}
-  .iface-list li{list-style:none;display:flex;gap:12px;align-items:flex-start;font-size:15px;color:var(--ink-dim)}
-  .iface-list b{color:var(--ink);font-weight:560}
-  .iface-list .k{flex:0 0 auto;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--cyan);
-    background:rgba(90,200,250,.12);border:1px solid rgba(90,200,250,.32)}
-
-  /* ===== effects ===== */
-  .fx{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-  .efx{padding:22px 20px 24px;border-radius:22px;transition:.35s var(--ease);min-height:158px;display:flex;flex-direction:column}
-  .efx:hover{transform:translateY(-4px)}
-  .efx .fxic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;margin-bottom:auto;background:rgba(255,255,255,.06);border:1px solid var(--glass-edge)}
-  .efx h4{font-size:16px;font-weight:580;margin-top:18px;letter-spacing:-.01em}
-  .efx p{font-size:13.5px;color:var(--ink-dim);margin-top:5px;font-weight:420}
-  .efx code{font-family:var(--mono);font-size:11.5px;color:var(--cyan);background:rgba(90,200,250,.1);padding:1px 6px;border-radius:6px}
-
-  /* ===== MATH section ===== */
-  .math-intro{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;margin-bottom:46px}
-  .formula{font-family:var(--mono);font-size:15px;color:var(--ink);background:rgba(255,255,255,.04);
-    border:1px solid var(--glass-edge);border-radius:14px;padding:16px 18px;margin-top:14px;line-height:1.9;overflow-x:auto}
-  .formula .c{color:var(--cyan)} .formula .v{color:var(--violet)} .formula .p{color:var(--pink)}
-  .formula .g{color:var(--green)} .formula .d{color:var(--ink-faint)}
-  .ops{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:8px}
-  .op{padding:20px 18px 22px;border-radius:20px;transition:.35s var(--ease)}
-  .op:hover{transform:translateY(-4px)}
-  .op .sym{font-family:var(--mono);font-size:26px;font-weight:600;letter-spacing:-.02em}
-  .op h4{font-size:15.5px;font-weight:600;margin-top:12px}
-  .op p{font-size:13px;color:var(--ink-dim);margin-top:6px;font-weight:420}
-  .derive{margin-top:30px;border-radius:var(--r-lg);padding:34px 32px}
-  .derive h3{font-size:21px;font-weight:620;letter-spacing:-.02em}
-  .chain{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:22px;font-family:var(--mono);font-size:14px}
-  .node{padding:10px 15px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--glass-edge);color:var(--ink)}
-  .node.hl{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 0 18px -6px var(--cyan);color:var(--ink)}
-  .arrow{color:var(--cyan);font-size:18px;display:flex;flex-direction:column;align-items:center;line-height:1}
-  .arrow small{font-family:-apple-system,system-ui,sans-serif;font-size:10px;color:var(--ink-faint);letter-spacing:.05em;margin-top:3px}
-  .euler{margin-top:22px;font-size:14.5px;color:var(--ink-dim)}
-  .euler b{color:var(--ink);font-weight:560}
-  .euler code{font-family:var(--mono);color:var(--green);background:rgba(48,209,88,.1);padding:2px 7px;border-radius:6px}
-
-  /* ===== capture ===== */
-  .split{display:grid;grid-template-columns:1.05fr .95fr;gap:24px;align-items:stretch}
-  .capture-card{border-radius:var(--r-lg);padding:42px 40px;display:flex;flex-direction:column;justify-content:center}
-  .capture-card h2{font-size:clamp(28px,3.6vw,40px);letter-spacing:-.03em;line-height:1.04;font-weight:660}
-  .capture-card p{color:var(--ink-dim);margin-top:16px;font-size:16.5px;font-weight:420;max-width:38ch}
-  .feat-list{margin-top:26px;display:flex;flex-direction:column;gap:14px}
-  .feat-list li{display:flex;gap:13px;align-items:flex-start;list-style:none;font-size:15.5px;color:var(--ink)}
-  .feat-list .tick{flex:0 0 auto;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;margin-top:1px;
-    background:rgba(48,209,88,.16);border:1px solid rgba(48,209,88,.4);color:var(--green);font-size:12px}
-  .feat-list span{color:var(--ink-dim);font-size:15px} .feat-list b{color:var(--ink);font-weight:560}
-  .preview{border-radius:var(--r-lg);overflow:hidden;position:relative;min-height:340px}
-  #preview-stage{position:absolute;inset:0;width:100%;height:100%}
-  .preview .ui-pill{position:absolute;z-index:3;border-radius:var(--r-pill);font-size:12.5px;font-weight:540;padding:9px 15px;display:flex;align-items:center;gap:8px;color:var(--ink);
-    background:rgba(255,255,255,.08);border:1px solid var(--glass-edge);-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);
-    box-shadow:0 1px 0 var(--glass-edge-bright) inset,0 8px 24px -8px rgba(0,0,0,.6)}
-  .preview .rec{top:18px;left:18px}
-  .preview .rec .blink{width:9px;height:9px;border-radius:50%;background:var(--pink);box-shadow:0 0 10px var(--pink);animation:blink 1.3s infinite}
-  @keyframes blink{50%{opacity:.25}}
-  .preview .tools{bottom:18px;left:50%;transform:translateX(-50%);gap:14px}
-  .preview .tools .t.on{color:var(--cyan)} .preview .tools .t{opacity:.6} .preview .tools .t.on{opacity:1}
-
-  /* ===== craft ===== */
-  .craft{border-radius:var(--r-lg);padding:48px 44px;text-align:center}
-  .craft h2{font-size:clamp(26px,3.4vw,38px);letter-spacing:-.03em;font-weight:660;line-height:1.06}
-  .craft h2 .grad2{background:linear-gradient(100deg,var(--cyan),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
-  .craft p{color:var(--ink-dim);margin-top:14px;font-size:16.5px;max-width:54ch;margin:14px auto 0;font-weight:420}
-  .stats{display:flex;justify-content:center;gap:46px;margin-top:38px;flex-wrap:wrap}
-  .stat .n{font-size:40px;font-weight:680;letter-spacing:-.03em;background:linear-gradient(180deg,#fff,#b9c0d6);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .stat .l{font-size:13px;color:var(--ink-faint);margin-top:4px;letter-spacing:.03em}
-
-  /* ===== closer / footer ===== */
-  .closer{text-align:center;padding:clamp(96px,16vh,170px) 0}
-  .closer h2{font-size:clamp(38px,7vw,76px);letter-spacing:-.035em;line-height:.98;font-weight:680}
-  .closer .grad3{background:linear-gradient(100deg,var(--violet),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
-  .closer p{color:var(--ink-dim);margin-top:20px;font-size:18px;font-weight:420}
-  .hero-cta{display:flex;gap:13px;margin-top:32px;flex-wrap:wrap}
-  .closer .hero-cta{justify-content:center}
-  .btn{display:inline-flex;align-items:center;gap:9px;padding:14px 24px;border-radius:var(--r-pill);font-size:16px;font-weight:560;cursor:pointer;transition:.28s var(--ease);border:none}
-  .btn-primary{color:#04121b;background:linear-gradient(180deg,#f2fbff,#9fdfff);box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 12px 34px -10px rgba(90,200,250,.7)}
-  .btn-primary:hover{transform:translateY(-2px);filter:brightness(1.04)}
-  .btn-ghost{color:var(--ink);background:var(--glass-fill);border:1px solid var(--glass-edge);-webkit-backdrop-filter:blur(16px) saturate(1.5);backdrop-filter:blur(16px) saturate(1.5);box-shadow:0 1px 0 var(--glass-edge-bright) inset}
-  .btn-ghost:hover{background:var(--glass-fill-strong);transform:translateY(-2px)}
-  footer{padding:34px 0 50px}
-  .foot{display:flex;align-items:center;gap:18px;padding:18px 26px;border-radius:var(--r-pill);flex-wrap:wrap}
-  .foot .brand{font-size:15px} .foot .fl{margin-left:auto;display:flex;gap:22px;font-size:13.5px;color:var(--ink-dim)}
-  .foot .fl a:hover{color:var(--ink)} .foot .cr{font-size:12.5px;color:var(--ink-faint);width:100%;margin-top:4px}
-
-  .reveal{opacity:0;transform:translateY(26px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
-  .reveal.in{opacity:1;transform:none}
-
-  @media(max-width:920px){
-    .pillars{grid-template-columns:1fr}
-    .fx{grid-template-columns:repeat(2,1fr)}
-    .ops{grid-template-columns:repeat(2,1fr)}
-    .iface-grid{grid-template-columns:1fr;gap:28px}
-    .math-intro{grid-template-columns:1fr;gap:24px}
-    .split{grid-template-columns:1fr}
-    .nav-links{display:none}
-    .nav-burger{display:grid;margin-left:auto;place-items:center;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--glass-edge);cursor:pointer}
+  .blob-a { width: 60vw; height: 60vw; left: -16vw; top: -22vh;
+    background: radial-gradient(circle at 50% 50%, rgba(94,231,214,.55), transparent 62%); }
+  .blob-b { width: 64vw; height: 64vw; right: -22vw; top: 6vh;
+    background: radial-gradient(circle at 50% 50%, rgba(124,108,255,.5), transparent 62%); animation-delay: -8s; }
+  .blob-c { width: 56vw; height: 56vw; left: 18vw; bottom: -28vh;
+    background: radial-gradient(circle at 50% 50%, rgba(255,143,208,.4), transparent 62%); animation-delay: -15s; }
+  .aurora .grain {
+    position: absolute; inset: 0; opacity: .035; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120'
+  height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9'
+  numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
-  @media(max-width:560px){
-    .fx{grid-template-columns:1fr}.ops{grid-template-columns:1fr}.stats{gap:30px}
-    .dock-right{display:none}
-    .menu-pop{display:none}
+  @keyframes drift { 0% { transform: translate3d(0,0,0) scale(1); } 100% { transform: translate3d(4vw,5vh,0)
+  scale(1.14); } }
+  main, .nav-wrap, .footer { position: relative; z-index: 2; }
+  .cursor-light {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(220px 220px at var(--mx,50%) var(--my,40%), rgba(160,180,255,.10), transparent 70%);
+    transition: background .12s linear;
   }
-  @media(prefers-reduced-motion:reduce){
-    *{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto}
-    .reveal{opacity:1;transform:none}
+  @media (hover:none) { .cursor-light { display: none; } }
+  /* --- Glass primitive --- */
+  .glass {
+    position: relative; background: var(--glass-bg); border: 1px solid var(--glass-stroke);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(165%); backdrop-filter: blur(var(--blur)) saturate(165%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 1px rgba(0,0,0,.25), var(--shadow-lg);
   }
-</style>
-</head>
-<body>
-  <div class="scene-bg"></div>
-  <div class="aurora"><b></b><b></b><b></b></div>
+  .glass::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(180deg, rgba(255,255,255,.16), transparent 42%); opacity: .9;
+  }
+  /* --- Buttons --- */
+  .btn {
+    display: inline-flex; align-items: center; gap: .55em; font-weight: 600; font-size: .95rem; letter-spacing: -.01em;
+    padding: .8em 1.35em; border-radius: 999px; cursor: pointer; border: 1px solid var(--glass-stroke);
+    -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
+    transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .25s var(--ease); white-space:
+  nowrap;
+  }
+  .btn .ico { width: 1.05em; height: 1.05em; fill: currentColor; }
+  .btn-lg { font-size: 1.02rem; padding: .95em 1.6em; }
+  .btn-ghost { background: var(--glass-bg); color: var(--ink); }
+  .btn-ghost:hover { background: var(--glass-bg-2); transform: translateY(-2px); }
+  .btn-accent {
+    color: #06121a; border: none; background: var(--grad); background-size: 200% 200%;
+    box-shadow: 0 10px 30px -8px rgba(124,155,255,.55), inset 0 1px 0 rgba(255,255,255,.5); animation: hue-pan 9s ease
+  infinite;
+  }
+  .btn-accent:hover { transform: translateY(-2px); box-shadow: 0 16px 40px -8px rgba(124,155,255,.7), inset 0 1px 0
+  rgba(255,255,255,.6); }
+  @keyframes hue-pan { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+  .btn-pill { padding: .6em 1.15em; font-size: .9rem; }
+  /* --- Nav --- */
+  .nav-wrap { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; justify-content: center; padding:
+  16px; transition: padding .3s var(--ease); }
+  .nav-wrap.scrolled { padding: 9px 16px; }
+  .nav { width: 100%; max-width: var(--maxw); display: flex; align-items: center; gap: 18px; padding: 9px 12px 9px 16px;
+  border-radius: 999px; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; }
+  .brand-mark { width: 38px; height: 38px; }
+  .brand-name { font-size: 1.16rem; letter-spacing: -.02em; background: var(--grad); -webkit-background-clip: text;
+  background-clip: text; color: transparent; }
+  .nav-links { display: flex; gap: 6px; margin-left: auto; }
+  .nav-links a { padding: .5em .85em; border-radius: 999px; color: var(--ink-dim); font-size: .92rem; font-weight: 500;
+  transition: color .2s, background .2s; }
+  .nav-links a:hover { color: var(--ink); background: var(--glass-bg); }
+  .nav-cta { margin-left: 4px; }
+  @media (max-width: 720px) { .nav-links { display: none; } .nav-cta { margin-left: auto; } }
+  /* --- Layout --- */
+  .section { max-width: var(--maxw); margin: 0 auto; padding: 120px 22px; position: relative; }
+  .section-head { max-width: 760px; margin-bottom: 56px; }
+  .kicker { font-size: .82rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--teal);
+  margin-bottom: 14px; }
+  h2 { font-size: clamp(2rem, 4.6vw, 3.4rem); line-height: 1.05; letter-spacing: -.03em; font-weight: 700; }
+  .lede { margin-top: 18px; font-size: clamp(1rem,1.6vw,1.18rem); color: var(--ink-dim); max-width: 60ch; }
+  .grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  /* --- Hero --- */
+  .hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; padding: 120px 22px 80px; overflow: hidden; }
+  .hero-scene { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+  .hero-vignette { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(120% 90%
+  at 50% 42%, transparent 38%, rgba(6,7,13,.72) 100%); }
+  .hero-inner { position: relative; z-index: 2; max-width: 880px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: .6em; padding: .5em 1em; border-radius: 999px; font-size:
+  .85rem; font-weight: 600; color: var(--ink-dim); margin-bottom: 26px; }
+  .glass-chip { background: var(--glass-bg); border: 1px solid var(--glass-stroke); -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px); }
+  .eyebrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 12px
+  var(--teal); animation: pulse 2.4s ease infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .5; transform: scale(.7); } }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.4rem); line-height: 1.02; letter-spacing: -.04em; font-weight: 750; }
+  .hero-title .line { display: block; }
+  .hero-sub { margin: 28px auto 0; max-width: 60ch; font-size: clamp(1.05rem,1.9vw,1.3rem); color: var(--ink-dim); }
+  .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 38px; }
+  .hero-stats { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 54px; list-style: none;
+  }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 120px; padding: 18px 20px;
+  border-radius: 20px; }
+  .stat b { font-size: 2rem; font-weight: 750; letter-spacing: -.03em; background: var(--grad); -webkit-background-clip:
+  text; background-clip: text; color: transparent; }
+  .stat span { font-size: .82rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .1em; }
+  .scroll-hint { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); z-index: 3; width: 24px;
+  height: 38px; border: 1.5px solid var(--glass-stroke); border-radius: 14px; }
+  .scroll-hint span { position: absolute; top: 7px; left: 50%; width: 4px; height: 7px; border-radius: 4px; background:
+  var(--teal); transform: translateX(-50%); animation: scroll 1.8s var(--ease) infinite; }
+  @keyframes scroll { 0% { opacity: 0; transform: translate(-50%,0); } 30% { opacity: 1; } 100% { opacity: 0; transform:
+  translate(-50%,14px); } }
+  /* --- Marquee --- */
+  .marquee { overflow: hidden; padding: 22px 0; border-top: 1px solid rgba(255,255,255,.06); border-bottom: 1px solid
+  rgba(255,255,255,.06);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image:
+  linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+  .marquee-track { display: inline-flex; gap: 26px; white-space: nowrap; align-items: center; animation: scrollx 46s
+  linear infinite; }
+  .marquee-track span { font-size: 1.05rem; font-weight: 600; color: var(--ink-faint); letter-spacing: -.01em; }
+  .marquee-track span:nth-child(odd) { color: var(--ink-dim); }
+  @keyframes scrollx { to { transform: translateX(-50%); } }
+  /* --- Catalog / solids --- */
+  .solids-layout { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; }
+  .solids-stage { position: relative; aspect-ratio: 1/1; --stage-accent: var(--teal); }
+  .catalog-scene { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
+  .stage-ring { position: absolute; inset: 8%; border-radius: 50%; z-index: 1; border: 1px solid rgba(255,255,255,.06);
+    box-shadow: inset 0 0 120px -40px var(--stage-accent), 0 0 90px -50px var(--stage-accent);
+    background: radial-gradient(circle, color-mix(in srgb, var(--stage-accent) 10%, transparent), transparent 62%);
+  transition: --stage-accent .5s, box-shadow .5s; }
+  .stage-readout { position: absolute; left: 50%; bottom: 4%; transform: translateX(-50%); z-index: 3; display: flex;
+  flex-direction: column; align-items: center; gap: 2px; padding: 12px 22px; border-radius: 16px; text-align: center;
+  min-width: 60%; }
+  .readout-name { font-weight: 700; font-size: 1.05rem; }
+  .readout-meta { font-size: .8rem; color: var(--ink-faint); }
+  .family-list { display: flex; flex-direction: column; gap: 10px; }
+  .family { display: flex; align-items: center; gap: 14px; text-align: left; padding: 16px 18px; border-radius: 18px;
+  cursor: pointer; color: var(--ink); font: inherit; transition: transform .25s var(--ease), background .25s,
+  border-color .25s; }
+  .family:hover { transform: translateX(4px); background: var(--glass-bg-2); }
+  .family.on { border-color: color-mix(in srgb, var(--fam) 60%, transparent); box-shadow: inset 0 1px 0
+  rgba(255,255,255,.22), 0 0 30px -12px var(--fam), var(--shadow-lg); }
+  .family-dot { width: 14px; height: 14px; border-radius: 50%; flex: none; background: var(--fam); box-shadow: 0 0 14px
+  var(--fam); }
+  .family-text { display: flex; flex-direction: column; }
+  .family-text b { font-size: 1.02rem; font-weight: 650; }
+  .family-text i { font-style: normal; font-size: .84rem; color: var(--ink-faint); }
+  .family-n { margin-left: auto; font-size: 1.4rem; font-weight: 750; color: var(--ink-faint); font-variant-numeric:
+  tabular-nums; }
+  .family.on .family-n { color: var(--fam); }
+  /* --- Effect cards --- */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .card { border-radius: var(--radius); overflow: hidden; transform-style: preserve-3d; transform: perspective(900px)
+  rotateX(var(--rx,0)) rotateY(var(--ry,0)); transition: transform .3s var(--ease), box-shadow .3s var(--ease); }
+  .card:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 40px 80px -30px rgba(0,0,0,.8); }
+  .card::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background:
+  radial-gradient(280px 180px at var(--gx,50%) var(--gy,0%), rgba(255,255,255,.12), transparent 60%); opacity: 0;
+  transition: opacity .3s; mix-blend-mode: screen; }
+  .card:hover::after { opacity: 1; }
+  .card-demo { position: relative; aspect-ratio: 16/11; background: radial-gradient(120% 120% at 50% 30%,
+  rgba(255,255,255,.04), transparent 70%); }
+  .card-demo canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .card-body { padding: 22px 24px 26px; }
+  .card-body h3 { display: flex; align-items: center; gap: 12px; font-size: 1.22rem; font-weight: 680; letter-spacing:
+  -.02em; }
+  .card-body p { margin-top: 10px; color: var(--ink-dim); font-size: .96rem; }
+  .card-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; flex: none; font-size:
+  1.05rem; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); border: 1px solid color-mix(in
+  srgb, var(--c) 40%, transparent); box-shadow: 0 0 18px -6px var(--c); }
+  .feature-aura { grid-column: auto; }
+  /* --- Interface split --- */
+  .section-split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+  .checklist { list-style: none; margin-top: 26px; display: flex; flex-direction: column; gap: 12px; }
+  .checklist li { display: flex; gap: 12px; align-items: flex-start; color: var(--ink-dim); font-size: 1rem; }
+  .checklist span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; flex: none;
+  background: color-mix(in srgb, var(--teal) 18%, transparent); color: var(--teal); border: 1px solid color-mix(in srgb,
+  var(--teal) 40%, transparent); font-size: .75rem; }
+  .device { border-radius: 32px; padding: 16px; position: relative; aspect-ratio: 4/3; }
+  .device-canvas { position: absolute; inset: 16px; border-radius: 20px; overflow: hidden; background:
+  radial-gradient(120% 120% at 50% 30%, rgba(124,108,255,.08), transparent 70%); }
+  .device-canvas canvas { width: 100%; height: 100%; }
+  .tool-strip { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 3; display: flex;
+  gap: 8px; padding: 8px 10px; border-radius: 18px; }
+  .tool { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 11px; color: var(--c);
+  background: color-mix(in srgb, var(--c) 12%, transparent); border: 1px solid transparent; font-size: .95rem;
+  transition: transform .2s; }
+  .tool.active { border-color: color-mix(in srgb, var(--c) 65%, transparent); box-shadow: 0 0 18px -4px var(--c);
+  transform: translateY(-3px); background: color-mix(in srgb, var(--c) 24%, transparent); }
+  .float-panel { position: absolute; top: 22px; right: 22px; z-index: 3; width: 190px; border-radius: 18px; padding:
+  14px; }
+  .float-panel header { font-weight: 700; font-size: .92rem; color: var(--c); margin-bottom: 12px; }
+  .float-panel .row { display: flex; align-items: center; gap: 10px; margin: 9px 0; }
+  .float-panel label { font-size: .76rem; color: var(--ink-faint); width: 56px; flex: none; }
+  .float-panel .track { flex: 1; height: 6px; border-radius: 6px; background: rgba(255,255,255,.1); overflow: hidden; }
+  .float-panel .track i { display: block; height: 100%; border-radius: 6px; background: var(--grad); box-shadow: 0 0
+  10px rgba(124,155,255,.6); }
+  /* --- Capture --- */
+  .capture-grid { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: auto auto; gap: 22px; }
+  .cap { border-radius: var(--radius); padding: 26px; }
+  .cap.big { grid-row: span 2; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .cap h3 { font-size: 1.2rem; font-weight: 660; letter-spacing: -.02em; }
+  .cap p { margin-top: 8px; color: var(--ink-dim); font-size: .95rem; }
+  .cap-view { position: relative; aspect-ratio: 16/10; background: radial-gradient(120% 120% at 50% 30%,
+  rgba(255,143,208,.08), transparent 70%); }
+  .cap-view canvas { width: 100%; height: 100%; }
+  .cap-text { padding: 24px 26px 28px; }
+  .viewfinder { position: absolute; inset: 22px; pointer-events: none; }
+  .viewfinder span { position: absolute; width: 22px; height: 22px; border: 2px solid rgba(255,255,255,.6); }
+  .viewfinder span:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .viewfinder span:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+  .viewfinder span:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+  .viewfinder span:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+  .viewfinder .rec { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); font-size: .72rem;
+  font-weight: 700; letter-spacing: .12em; color: #ff7a7a; font-style: normal; display: flex; align-items: center; gap:
+  6px; }
+  .viewfinder .rec::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #ff5a5a; box-shadow:
+  0 0 10px #ff5a5a; animation: pulse 1.4s ease infinite; }
+  /* --- CTA --- */
+  .cta { padding-top: 40px; }
+  .cta-card { position: relative; border-radius: 40px; overflow: hidden; padding: 0; }
+  .cta-bg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .5; z-index: 0; }
+  .cta-inner { position: relative; z-index: 2; text-align: center; padding: 90px 24px; background: radial-gradient(120%
+  120% at 50% 40%, transparent, rgba(6,7,13,.55)); }
+  .cta-inner h2 { font-size: clamp(2.4rem,6vw,4.4rem); }
+  .cta-inner p { margin: 18px auto 0; max-width: 48ch; color: var(--ink-dim); font-size: 1.1rem; }
+  .cta-inner .hero-cta { margin-top: 34px; }
+  /* --- Footer --- */
+  .footer { border-top: 1px solid rgba(255,255,255,.06); padding: 56px 22px; margin-top: 40px; }
+  .footer-inner { max-width: var(--maxw); margin: 0 auto; display: flex; flex-direction: column; gap: 10px; align-items:
+  flex-start; }
+  .footer-tag { color: var(--ink-dim); font-size: .95rem; }
+  .footer-fine { color: var(--ink-faint); font-size: .85rem; }
+  /* --- Reveal animation --- */
+  .reveal { opacity: 0; transform: translateY(26px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  .hero .reveal { transition-delay: .05s; }
+  .hero-title.reveal.in { transition-delay: .12s; }
+  .hero-sub.reveal.in { transition-delay: .22s; }
+  .hero-cta.reveal.in { transition-delay: .32s; }
+  .hero-stats.reveal.in { transition-delay: .42s; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } .marquee-track,
+  .blob, .btn-accent { animation: none !important; } }
+  /* --- Responsive --- */
+  @media (max-width: 960px) {
+    .solids-layout { grid-template-columns: 1fr; }
+    .solids-stage { max-width: 460px; margin: 0 auto; width: 100%; }
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .section-split { grid-template-columns: 1fr; gap: 40px; }
+    .capture-grid { grid-template-columns: 1fr; }
+    .cap.big { grid-row: auto; }
+  }
+  @media (max-width: 640px) {
+    .section { padding: 84px 18px; }
+    .cards { grid-template-columns: 1fr; }
+    .hero-stats { gap: 8px; }
+    .stat { min-width: calc(50% - 8px); }
+    .device { aspect-ratio: 3/4; }
+    .float-panel { width: 150px; top: 14px; right: 14px; }
+  }
+  </style>
+  </head>
+  <body>
 
-  <!-- NAV -->
-  <div class="nav-wrap">
-    <nav class="nav glass">
-      <div class="brand">
-        <svg class="mark" viewBox="0 0 32 32" fill="none">
-          <defs><linearGradient id="g1" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#5ac8fa"/><stop offset="1" stop-color="#bf5af2"/></linearGradient></defs>
-          <path d="M16 2 L29 9.5 V22.5 L16 30 L3 22.5 V9.5 Z" stroke="url(#g1)" stroke-width="1.6" fill="rgba(90,200,250,.08)"/>
-          <path d="M16 2 L16 16 L3 9.5 M16 16 L29 9.5 M16 16 L16 30" stroke="url(#g1)" stroke-width="1.1" opacity=".75"/>
-        </svg>Athena
-      </div>
+  <!-- Ambient layers ------------------------------------------------------->
+  <canvas id="bg" class="bg-canvas" aria-hidden="true"></canvas>
+  <div class="aurora" aria-hidden="true">
+    <span class="blob blob-a"></span>
+    <span class="blob blob-b"></span>
+    <span class="blob blob-c"></span>
+    <span class="grain"></span>
+  </div>
+  <div id="cursor-light" class="cursor-light" aria-hidden="true"></div>
+
+  <!-- Nav ------------------------------------------------------------------>
+  <header class="nav-wrap">
+    <nav class="nav glass" aria-label="Primary">
+      <a class="brand" href="#top" aria-label="Athena home">
+        <canvas class="brand-mark" data-scene="brand" width="40" height="40" aria-hidden="true"></canvas>
+        <span class="brand-name">Athena</span>
+      </a>
       <div class="nav-links">
-        <a href="#try">Try it</a><a href="#interface">Interface</a><a href="#effects">Effects</a><a href="#math">The math</a><a href="#capture">Capture</a>
+        <a href="#solids">Solids</a>
+        <a href="#effects">Effects</a>
+        <a href="#interface">Interface</a>
+        <a href="#capture">Capture</a>
       </div>
-      <a href="#get" class="nav-cta">Coming to iPad</a>
-      <div class="nav-burger" aria-label="menu"><svg width="18" height="18" viewBox="0 0 18 18" stroke="#fff" stroke-width="1.6"><path d="M2 5h14M2 9h14M2 13h14"/></svg></div>
+      <a href="#get" class="btn btn-pill btn-accent nav-cta">Get Athena</a>
     </nav>
-  </div>
-  <div class="mobile-menu glass" id="mobileMenu">
-    <a href="#try">Try it</a><a href="#interface">Interface</a><a href="#effects">Effects</a><a href="#math">The math</a><a href="#capture">Capture</a>
-  </div>
+  </header>
 
-  <!-- HERO -->
-  <section class="hero" id="try">
-    <canvas id="stage"></canvas>
-    <div class="wrap">
+  <main id="top">
+
+    <!-- Hero --------------------------------------------------------------->
+    <section class="hero" id="hero">
+      <canvas id="hero-scene" class="hero-scene" data-scene="hero" aria-hidden="true"></canvas>
+      <div class="hero-vignette" aria-hidden="true"></div>
+
       <div class="hero-inner">
-        <span class="eyebrow"><span class="dot"></span> iPad · spatial art</span>
-        <h1>Procreate for <span class="grad">polyhedra.</span></h1>
-        <p class="sub">Summon a mathematical solid, then bend it with light and motion. Try the controls — this is the real renderer.</p>
+        <div class="eyebrow glass-chip reveal">
+          <span class="dot"></span> Procreate, but for polyhedra
+        </div>
+
+        <h1 class="hero-title reveal">
+          <span class="line">Sculpt with the</span>
+          <span class="line grad-text">shapes of mathematics.</span>
+        </h1>
+
+        <p class="hero-sub reveal">
+          Athena is an interactive 3D art studio for iPad. Summon the Platonic,
+          Archimedean, Catalan, Kepler–Poinsot, Goldberg and Johnson solids —
+          then spin them, spread them in color, blow them apart face&#8209;by&#8209;face,
+          and wrap them in glowing auras. All at sixty frames a second.
+        </p>
+
+        <div class="hero-cta reveal">
+          <a href="#get" class="btn btn-accent btn-lg">
+            <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M16.5 3c.1 1.1-.34 2.2-1.02 3-.7.82-1.86 
+  1.45-2.98 1.36-.12-1.07.4-2.2 1.04-2.9C14.3 3.6 15.5 3.05 16.5 3zm3.04 14.27c-.55 1.27-.82 1.84-1.53 2.97-.99 
+  1.57-2.39 3.53-4.12 3.54-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.02-3.05-1.79-4.04-3.36C-.02 16.6-.32 
+  11.4 1.4 8.65 2.6 6.71 4.55 5.6 6.38 5.6c1.86 0 3.03 1.02 4.57 1.02 1.49 0 2.4-1.02 4.56-1.02 1.63 0 3.36.89 4.59 
+  2.42-4.03 2.21-3.38 7.96-.56 9.25z"/></svg>
+            Download on iPad
+          </a>
+          <a href="#effects" class="btn btn-ghost btn-lg">See it move →</a>
+        </div>
+
+        <ul class="hero-stats reveal" aria-label="At a glance">
+          <li class="glass stat"><b data-count="47">47</b><span>Solids</span></li>
+          <li class="glass stat"><b data-count="6">6</b><span>Families</span></li>
+          <li class="glass stat"><b data-count="60">60</b><span>FPS</span></li>
+          <li class="glass stat"><b data-count="0">0</b><span>Dependencies</span></li>
+        </ul>
       </div>
 
-      <div class="dock glass">
-        <div class="dock-row">
-          <div class="dock-label">Summon a solid</div>
-          <button class="chip on" data-solid="icosahedron">Icosahedron</button>
-          <button class="chip" data-solid="dodecahedron">Dodecahedron</button>
-          <button class="chip" data-solid="octahedron">Octahedron</button>
-          <button class="chip" data-solid="cube">Cube</button>
-          <button class="chip" data-solid="tetrahedron">Tetrahedron</button>
-        </div>
-        <div class="dock-row">
-          <div class="ctrl"><span class="cl">Spin</span><input id="r-spin" type="range" min="0" max="2.5" step="0.01" value="1"></div>
-          <div class="menu"><span class="cl">Axis</span>
-            <select id="m-axis" class="sel-menu">
-              <option value="Tumble" selected>Tumble</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
-            </select>
-          </div>
-          <div class="menu"><span class="cl">Colour</span>
-            <select id="m-harmony" class="sel-menu">
-              <option value="Rainbow" selected>Rainbow</option><option value="Golden">Golden</option>
-              <option value="Complementary">Complementary</option><option value="Split">Split</option>
-              <option value="Triadic">Triadic</option><option value="Tetradic">Tetradic</option>
-              <option value="Analogous">Analogous</option><option value="Mono">Mono</option>
-              <option value="Warm">Warm</option><option value="Cool">Cool</option>
-              <option value="Pastel">Pastel</option><option value="Neon">Neon</option>
-              <option value="Earth">Earth</option><option value="Ice">Ice</option>
-            </select>
-          </div>
-        </div>
-        <div class="dock-row">
-          <div class="ctrl"><span class="cl">Explode</span><input id="r-explode" type="range" min="0" max="1" step="0.01" value="0"></div>
-          <div class="ctrl"><span class="cl">Shells</span><input id="r-shells" type="range" min="0" max="6" step="1" value="0"></div>
-          <div class="ctrl"><span class="cl">Hue</span><input id="r-hue" type="range" min="0" max="1" step="0.01" value="0.55"></div>
-        </div>
-        <div class="dock-row">
-          <div class="toggle" id="t-orbit"><span class="sw"></span> Group orbit</div>
-          <span class="hint">Real menus, real maths — colours use Athena's harmony formulas; Shells is the OBB cage stack.</span>
-        </div>
-        <div class="facts" id="facts">
-          <div class="fact"><span class="fk">V·E·F</span><span class="fv" id="f-vef">12 · 30 · 20</span></div>
-          <div class="fact"><span class="fk">Dual</span><span class="fv" id="f-dual">Dodecahedron</span></div>
-          <div class="fact"><span class="fk">Dihedral</span><span class="fv" id="f-dih">138.19°</span></div>
-          <div class="fact"><span class="fk">Faces</span><span class="fv" id="f-face">Triangle</span></div>
-        </div>
+      <div class="scroll-hint" aria-hidden="true"><span></span></div>
+    </section>
+
+    <!-- Marquee ------------------------------------------------------------>
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>Tetrahedron</span><span>•</span><span>Icosahedron</span><span>•</span>
+        <span>Truncated Icosahedron</span><span>•</span><span>Rhombic Triacontahedron</span><span>•</span>
+        <span>Great Dodecahedron</span><span>•</span><span>Pentagonal Cupola</span><span>•</span>
+        <span>Cuboctahedron</span><span>•</span><span>Small Stellated Dodecahedron</span><span>•</span>
+        <span>Chamfered Dodecahedron</span><span>•</span><span>Octahedron</span><span>•</span>
+        <span>Tetrahedron</span><span>•</span><span>Icosahedron</span><span>•</span>
+        <span>Truncated Icosahedron</span><span>•</span><span>Rhombic Triacontahedron</span><span>•</span>
+        <span>Great Dodecahedron</span><span>•</span><span>Pentagonal Cupola</span><span>•</span>
+        <span>Cuboctahedron</span><span>•</span><span>Small Stellated Dodecahedron</span><span>•</span>
+        <span>Chamfered Dodecahedron</span><span>•</span><span>Octahedron</span><span>•</span>
       </div>
     </div>
-  </section>
-
-  <!-- PILLARS -->
-  <section class="pad">
-    <div class="wrap">
-      <div class="head reveal">
-        <span class="eyebrow"><span class="dot"></span> the idea</span>
-        <h2>A studio for solids, on a canvas of light.</h2>
-        <p>Athena turns pure geometry into a living scene. Tap to summon, drag to arrange, and let effects run while you compose.</p>
+  
+    <!-- Solids / catalog --------------------------------------------------->
+    <section class="section" id="solids">
+      <div class="section-head reveal">
+        <p class="kicker">The Catalog</p>
+        <h2>Six families.<br />Forty&#8209;seven solids.<br /><span class="grad-text">One tap away.</span></h2>
+        <p class="lede">
+          Every shape is generated from pure mathematics — hand-typed Platonic seeds,
+          then Conway operations (dual, ambo, truncate, kis, chamfer) derive the rest.
+          Tap a family to recast the centerpiece.
+        </p>
       </div>
-      <div class="pillars">
-        <div class="pillar glass reveal">
-          <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5ac8fa" stroke-width="1.5"><path d="M12 2 21 7v10l-9 5-9-5V7Z"/><path d="m12 2 0 20M3 7l9 5 9-5"/></svg></div>
-          <h3>44 solids, one tap</h3><p>From the five Platonic solids to Archimedean, Catalan, Kepler–Poinsot and Johnson — every shape derived from clean geometry.</p>
-        </div>
-        <div class="pillar glass reveal">
-          <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#bf5af2" stroke-width="1.5"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div>
-          <h3>Effects that move</h3><p>Spin, colour harmonies, explode, glowing shells and 30+ particle trails — all live, all at once.</p>
-        </div>
-        <div class="pillar glass reveal">
-          <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#30d158" stroke-width="1.5"><rect x="3" y="6" width="18" height="13" rx="3"/><circle cx="12" cy="12.5" r="3.2"/><path d="M8 6 9.5 3h5L16 6"/></svg></div>
-          <h3>Capture in motion</h3><p>Shoot a photo or record video straight from the scene, then save and share.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- INTERFACE MOCKUP -->
-  <section class="pad" id="interface">
-    <div class="wrap">
-      <div class="iface-grid">
-        <div class="iface-copy reveal">
-          <span class="eyebrow"><span class="dot"></span> the interface</span>
-          <h2>Every control, one thumb away.</h2>
-          <p>A SwiftUI surface floats over the SceneKit scene: pick a tool from the strip, dial it in on the right dock, and group your solids with selectable chips.</p>
-          <ul class="iface-list">
-            <li><span class="k">⊞</span><div><b>Tool strip</b> — Motion, Appearance, Explode, Shells, Trails, Layer and Group.</div></li>
-            <li><span class="k">◐</span><div><b>Settings dock</b> — sliders for whatever tool is active, bound to every selected object.</div></li>
-            <li><span class="k">⟲</span><div><b>Undo / redo</b> — floating buttons that step through 50 snapshots without moving your camera.</div></li>
-            <li><span class="k">◉</span><div><b>Menus everywhere</b> — spin axis, render quality and 14 colour harmonies, one tap each.</div></li>
-          </ul>
-        </div>
-        <div class="device reveal">
-          <div class="screen">
-            <canvas id="appscene"></canvas>
-            <div class="ov meta">
-              <div class="ov-pill"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg> Pause</div>
-              <div class="ov-pill">Untitled scene</div>
-            </div>
-            <div class="ov topright">
-              <div class="rbtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 7 4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10"/></svg></div>
-              <div class="rbtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m15 7 5 5-5 5"/><path d="M20 12H9a5 5 0 0 0 0 10"/></svg></div>
-            </div>
-            <div class="ov chips-row">
-              <div class="gchip sel">G1 · 12</div><div class="gchip">G2 · 6</div>
-            </div>
-            <div class="ov menu-pop">
-              <div class="mh">Colour harmony</div>
-              <div class="mi"><span><span class="sw-dot" style="background:#ff453a"></span>Warm</span></div>
-              <div class="mi on"><span><span class="sw-dot" style="background:#5ac8fa"></span>Cool</span></div>
-              <div class="mi"><span><span class="sw-dot" style="background:#bf5af2"></span>Neon</span></div>
-              <div class="mi"><span><span class="sw-dot" style="background:#30d158"></span>Golden</span></div>
-              <div class="mi"><span><span class="sw-dot" style="background:#ffd60a"></span>Earth</span></div>
-            </div>
-            <div class="ov dock-right">
-              <div class="t">Shells · OBB</div>
-              <div class="fakeslide"><span>Count · 3</span><div class="track"><i style="left:40%"></i></div></div>
-              <div class="fakeslide"><span>Spacing</span><div class="track"><i style="left:30%"></i></div></div>
-              <div class="fakeslide"><span>Glow</span><div class="track"><i style="left:62%"></i></div></div>
-              <div class="fakeslide"><span>Breathe</span><div class="track"><i style="left:50%"></i></div></div>
-            </div>
-            <div class="ov toolstrip">
-              <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v5h-5"/></svg></div>
-              <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
-              <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 12 4 4M12 12l8-8M12 12l-8 8M12 12l8 8"/></svg></div>
-              <div class="tool sel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3 20 7v10l-8 4-8-4V7Z"/><path d="M12 6.5 16.5 9v6l-4.5 2.5L7.5 15V9Z"/></svg></div>
-              <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12h5M10 12h2M14 12h1.5"/><circle cx="20" cy="12" r="2"/></svg></div>
-              <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="13" height="13" rx="2"/><path d="M9 9h11v11H9" opacity=".6"/></svg></div>
-              <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></div>
-            </div>
-            <div class="ov botbar">
-              <div class="bb">Solids</div><div class="bb">× 12</div><div class="bb">HD ▾</div>
-            </div>
+      <div class="solids-layout">
+        <div class="solids-stage">
+          <canvas id="catalog-scene" class="catalog-scene" data-scene="catalog" aria-hidden="true"></canvas>
+          <div class="stage-ring" aria-hidden="true"></div>
+          <div class="stage-readout glass">
+            <span class="readout-name" id="readout-name">Icosahedron</span>
+            <span class="readout-meta" id="readout-meta">20 faces · 30 edges · 12 vertices</span>
           </div>
         </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- EFFECTS -->
-  <section id="effects" class="pad">
-    <div class="wrap">
-      <div class="head reveal">
-        <span class="eyebrow"><span class="dot"></span> the effects</span>
-        <h2>Pick a tool. Watch it come alive.</h2>
-        <p>Effects are stored per object and per group, so a single scene can hold dozens of solids each doing their own thing — and every value saves with the file.</p>
+        <div class="family-list reveal">
+          <button class="family glass" data-solid="icosahedron" data-family="Platonic" data-count="5" data-info="20 
+  faces · 30 edges · 12 vertices" style="--fam:#5ee7d6">
+            <span class="family-dot"></span>
+            <span class="family-text"><b>Platonic</b><i>5 perfect, regular solids</i></span>
+            <span class="family-n">5</span>
+          </button>
+          <button class="family glass" data-solid="truncatedIcosahedron" data-family="Archimedean" data-count="11" 
+  data-info="32 faces · 90 edges · 60 vertices" style="--fam:#7c9bff">
+            <span class="family-dot"></span>
+            <span class="family-text"><b>Archimedean</b><i>Truncations &amp; rectifications</i></span>
+            <span class="family-n">11</span>
+          </button>
+          <button class="family glass" data-solid="dodecahedron" data-family="Catalan" data-count="11" data-info="Duals 
+  of the Archimedeans" style="--fam:#b58bff">
+            <span class="family-dot"></span>
+            <span class="family-text"><b>Catalan</b><i>The duals, face-transitive</i></span>
+            <span class="family-n">11</span>
+          </button>
+          <button class="family glass" data-solid="octahedron" data-family="Kepler–Poinsot" data-count="4" 
+  data-info="Self-intersecting star polyhedra" style="--fam:#ff8fd0">
+            <span class="family-dot"></span>
+            <span class="family-text"><b>Kepler–Poinsot</b><i>The four regular stars</i></span>
+            <span class="family-n">4</span>
+          </button>
+          <button class="family glass" data-solid="cube" data-family="Goldberg" data-count="3" data-info="Chamfered, 
+  geodesic cages" style="--fam:#ffd479">
+            <span class="family-dot"></span>
+            <span class="family-text"><b>Goldberg</b><i>Geodesic chamfers</i></span>
+            <span class="family-n">3</span>
+          </button>
+          <button class="family glass" data-solid="tetrahedron" data-family="Johnson" data-count="13" 
+  data-info="Pyramids, cupolas, bipyramids" style="--fam:#9affc8">
+            <span class="family-dot"></span>
+            <span class="family-text"><b>Johnson</b><i>Regular-faced, non-uniform</i></span>
+            <span class="family-n">13</span>
+          </button>
+        </div>
       </div>
-      <div class="fx">
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5ac8fa" stroke-width="1.6"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v5h-5"/></svg></div><h4>Spin</h4><p>Tumble, or lock to <code>X</code> · <code>Y</code> · <code>Z</code>, with a per-layer stagger.</p></div>
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#bf5af2" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18"/></svg></div><h4>Colour harmonies</h4><p>14 wheel patterns — Rainbow, Golden, Triadic, Neon, Ice — recolour the whole set live.</p></div>
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff375f" stroke-width="1.6"><path d="M12 12 4 4M12 12l8-8M12 12l-8 8M12 12l8 8"/><circle cx="12" cy="12" r="2.4"/></svg></div><h4>Explode</h4><p>Blow faces outward in up to six nested layers, with spacing and fade.</p></div>
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd60a" stroke-width="1.6"><path d="M12 3 20 8v8l-8 5-8-5V8Z"/><path d="M12 6 17 9v6l-5 3-5-3V9Z"/></svg></div><h4>Shells <span style="font-size:11px;color:var(--ink-faint)">· OBB</span></h4><p>A stack of glowing cages that follow the shape — pulse, breathe, rotate, rainbow.</p></div>
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#30d158" stroke-width="1.6"><path d="M3 12h4M9 12h2M13 12h1.5M16.5 12H18"/><circle cx="20" cy="12" r="2"/></svg></div><h4>Particle trails</h4><p>Over 30 types — comet, fire, plasma, lightning, chromatic — plus zoom-reactive warps.</p></div>
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" stroke-width="1.6"><path d="M5 12 9 4l4 8M11 12l4-8 4 8M3 16h18M3 20h18"/></svg></div><h4>Size variation</h4><p>Five channels multiply: per-object, Fibonacci, Euler density, Kepler nesting, F/V duality.</p></div>
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5ac8fa" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></div><h4>Group spin</h4><p>Orbit a whole cluster about its centroid; reverse it, or tilt freely with two fingers.</p></div>
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#bf5af2" stroke-width="1.6"><path d="M4 18c4-10 12-10 16 0"/><circle cx="4" cy="18" r="1.6" fill="currentColor"/><circle cx="12" cy="11.5" r="1.6" fill="currentColor"/><circle cx="20" cy="18" r="1.6" fill="currentColor"/></svg></div><h4>Travel path</h4><p>Send a group along an XYZ route — "beads on a wire" — looping or one-shot.</p></div>
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd60a" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4 4l2 2M18 18l-2-2M2 12h3M19 12h3"/></svg></div><h4>Lighting &amp; glow</h4><p>Steer the key light by azimuth and elevation; push object luminance into bloom.</p></div>
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#30d158" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15h18"/></svg></div><h4>Render quality</h4><p><code>SD</code> · <code>HD</code> · <code>Ultra</code> — antialiasing and supersampling on tap.</p></div>
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" stroke-width="1.6"><path d="M3 7v10M21 7v10M7 5h10M7 19h10"/><circle cx="12" cy="12" r="3"/></svg></div><h4>Zoom-FX</h4><p>Trails react to the camera — warp streaks, vortex and burst on zoom.</p></div>
-        <div class="efx glass reveal"><div class="fxic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff375f" stroke-width="1.6"><path d="M4 7V5a1 1 0 0 1 1-1h2M20 7V5a1 1 0 0 0-1-1h-2M4 17v2a1 1 0 0 0 1 1h2M20 17v2a1 1 0 0 1-1 1h-2"/><circle cx="12" cy="12" r="3"/></svg></div><h4>Save · load · undo</h4><p>Whole-scene snapshots to <code>.athena</code>, reloaded exactly as they were.</p></div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- MATH -->
-  <section id="math" class="pad">
-    <div class="wrap">
-      <div class="head reveal" style="max-width:680px">
-        <span class="eyebrow"><span class="dot"></span> the math</span>
-        <h2>Four solids, typed by hand. The rest is derived.</h2>
-        <p>Coordinate tables are where errors hide. So Athena hand-types only the tetrahedron, cube, octahedron and icosahedron — then grows the whole catalog with a handful of geometric operators.</p>
+    <!-- Effects ------------------------------------------------------------>
+    <section class="section" id="effects">
+      <div class="section-head reveal">
+        <p class="kicker">The Creative Core</p>
+        <h2>Live effects, freely combined.</h2>
+        <p class="lede">
+          Select any objects and stack effects in real time — nothing rebuilds, nothing
+          blocks. A spinning, rainbow-trailed, exploded dodecahedron is six taps away.
+        </p>
       </div>
 
-      <div class="math-intro">
-        <div class="reveal">
-          <p style="color:var(--ink-dim);font-size:16px;font-weight:420">The icosahedron's twelve vertices are just the cyclic permutations of one pair of numbers — built from the golden ratio:</p>
-          <div class="formula reveal">
-<span class="d">// golden ratio</span><br>
-φ = <span class="c">(1 + √5) / 2</span> ≈ 1.6180<br><br>
-<span class="d">// 12 vertices, all permutations of</span><br>
-( 0, <span class="v">±1</span>, <span class="p">±φ</span> )&nbsp;&nbsp;( <span class="v">±1</span>, <span class="p">±φ</span>, 0 )&nbsp;&nbsp;( <span class="p">±φ</span>, 0, <span class="v">±1</span> )<br><br>
-<span class="d">// then normalise every solid to</span><br>
-circumradius = <span class="g">2</span>
+      <div class="cards">
+        <article class="card glass tilt reveal">
+          <div class="card-demo"><canvas data-scene="card" data-solid="cube" data-effect="spin" 
+  aria-hidden="true"></canvas></div>
+          <div class="card-body">
+            <h3><span class="card-ico" style="--c:#ff7a7a">↻</span> Motion</h3>
+            <p>Per-object spin and whole-group spin about the centroid. Time is the only input — drag a speed slider and
+  it lands on the very next frame.</p>
+          </div>
+        </article>
+  
+        <article class="card glass tilt reveal">
+          <div class="card-demo"><canvas data-scene="card" data-solid="icosahedron" data-effect="rainbow" 
+  aria-hidden="true"></canvas></div>
+          <div class="card-body">
+            <h3><span class="card-ico" style="--c:#7c9bff">◑</span> Color Spread</h3>
+            <p>Every object is recolored along an HSV gradient by index — or cycle the whole spectrum on the golden
+  angle for an animated rainbow sweep.</p>
+          </div>
+        </article>
+
+        <article class="card glass tilt reveal">
+          <div class="card-demo"><canvas data-scene="card" data-solid="octahedron" data-effect="explode" 
+  aria-hidden="true"></canvas></div>
+          <div class="card-body">
+            <h3><span class="card-ico" style="--c:#ffd479">✺</span> Explode</h3>
+            <p>Each face slides out along its own normal. The slider is piecewise — gentle in the middle, dramatic at
+  the extremes — for both fine control and full detonation.</p>
+          </div>
+        </article>
+  
+        <article class="card glass tilt reveal feature-aura">
+          <div class="card-demo"><canvas data-scene="card" data-solid="tetrahedron" data-effect="aura" 
+  aria-hidden="true"></canvas></div>
+          <div class="card-body">
+            <h3><span class="card-ico" style="--c:#5ee7d6">◎</span> Auras &amp; Shells</h3>
+            <p>Wrap any solid in concentric wireframe shells — your shape or another, one to eight deep, with spacing,
+  thickness, fade and glow. The signature Athena halo.</p>
+          </div>
+        </article>
+  
+        <article class="card glass tilt reveal">
+          <div class="card-demo"><canvas data-scene="card" data-solid="dodecahedron" data-effect="trail" 
+  aria-hidden="true"></canvas></div>
+          <div class="card-body">
+            <h3><span class="card-ico" style="--c:#b58bff">✧</span> Trails</h3>
+            <p>Particle systems trail every object as it travels — laser beams, plasma, ribbons, embers, confetti. Make
+  them rainbow and let zoom drive the warp.</p>
+          </div>
+        </article>
+  
+        <article class="card glass tilt reveal">
+          <div class="card-demo"><canvas data-scene="card" data-effect="groups" aria-hidden="true"></canvas></div>
+          <div class="card-body">
+            <h3><span class="card-ico" style="--c:#9affc8">▦</span> Groups &amp; Layers</h3>
+            <p>Organize objects into independent groups, each with its own shape, count and effects. Spin one cluster
+  while another breathes on a travelling wave.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Interface (liquid glass) ------------------------------------------->
+    <section class="section section-split" id="interface">
+      <div class="split-copy reveal">
+        <p class="kicker">The Control Surface</p>
+        <h2>A studio carved<br />from <span class="grad-text">liquid glass.</span></h2>
+        <p class="lede">
+          Translucent tool panels float over the canvas and never block it — your
+          gestures pass straight through to the 3D scene. Orbit, pinch and drag while
+          every control stays a thumb away.
+        </p>
+        <ul class="checklist">
+          <li><span>✓</span> Stackable, scrollable effect panels in a right-side dock</li>
+          <li><span>✓</span> One-finger orbit, pinch zoom, hold-to-move objects</li>
+          <li><span>✓</span> Clean-view mode hides all chrome for the pure scene</li>
+          <li><span>✓</span> Snapshot save / load &amp; full 50-step undo history</li>
+        </ul>
+      </div>
+
+      <div class="split-visual reveal">
+        <div class="device glass">
+          <div class="device-canvas">
+            <canvas data-scene="card" data-solid="icosahedron" data-effect="aura" aria-hidden="true"></canvas>
+          </div>
+          <!-- faux liquid-glass tool strip -->
+          <div class="tool-strip glass">
+            <span class="tool" style="--c:#a78bfa">◆</span>
+            <span class="tool" style="--c:#ff7a7a">↻</span>
+            <span class="tool" style="--c:#7c9bff">◑</span>
+            <span class="tool" style="--c:#ffd479">✺</span>
+            <span class="tool active" style="--c:#5ee7d6">◎</span>
+            <span class="tool" style="--c:#b58bff">✧</span>
+            <span class="tool" style="--c:#9affc8">▦</span>
+          </div>
+          <!-- faux floating panel -->
+          <div class="float-panel glass">
+            <header style="--c:#5ee7d6">Auras</header>
+            <div class="row"><label>Layers</label><div class="track"><i style="width:62%"></i></div></div>
+            <div class="row"><label>Spacing</label><div class="track"><i style="width:44%"></i></div></div>
+            <div class="row"><label>Glow</label><div class="track"><i style="width:78%"></i></div></div>
           </div>
         </div>
-        <div class="reveal">
-          <p style="color:var(--ink-dim);font-size:16px;font-weight:420">Operators always produce correct <b style="color:var(--ink)">topology</b>. The geometry comes out clean and consistent — exactly what an art tool needs, without a brittle table of hand-keyed coordinates for the whole catalog.</p>
-          <div class="formula reveal">
-<span class="d">// dual swaps faces ↔ vertices</span><br>
-dodecahedron = <span class="c">dual</span>( icosahedron )<br><br>
-<span class="d">// soccer ball = truncated icosahedron</span><br>
-result = <span class="c">truncate</span>( icosahedron )<br>
-<span class="d">// 12 pentagons + 20 hexagons</span>
+      </div>
+    </section>
+
+    <!-- Capture ------------------------------------------------------------>
+    <section class="section" id="capture">
+      <div class="section-head reveal">
+        <p class="kicker">Capture</p>
+        <h2>Frame it. Film it. Share it.</h2>
+      </div>
+      <div class="capture-grid">
+        <article class="cap glass big reveal">
+          <div class="cap-view">
+            <canvas data-scene="card" data-solid="dodecahedron" data-effect="rainbow" aria-hidden="true"></canvas>
+            <div class="viewfinder"><span></span><span></span><span></span><span></span><em class="rec">● REC</em></div>
+          </div>
+          <div class="cap-text">
+            <h3>High-resolution stills &amp; smooth video</h3>
+            <p>Re-render the scene off-screen for crisp, oversized photographs, or record full-resolution H.264 clips at
+  an even 30 fps. Everything routes to Photos and the share sheet.</p>
+          </div>
+        </article>
+        <article class="cap glass reveal">
+          <h3>SD · HD · Ultra</h3>
+          <p>Pick your fidelity — from a fast antialiased path to a 1.5× supersampled Ultra render.</p>
+        </article>
+        <article class="cap glass reveal">
+          <h3>Adjustable lighting</h3>
+          <p>Steer a key light by azimuth and elevation, balance fill and ambient, and dial brightness.</p>
+        </article>
+      </div>
+    </section>
+  
+    <!-- CTA ---------------------------------------------------------------->
+    <section class="section cta" id="get">
+      <div class="cta-card glass reveal">
+        <canvas data-scene="card" data-solid="icosahedron" data-effect="aura" class="cta-bg" 
+  aria-hidden="true"></canvas>
+        <div class="cta-inner">
+          <h2>Make something<br /><span class="grad-text">impossible.</span></h2>
+          <p>No accounts. No clutter. No dependencies — just Apple frameworks and pure geometry.</p>
+          <div class="hero-cta">
+            <a href="#" class="btn btn-accent btn-lg">
+              <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M16.5 3c.1 1.1-.34 2.2-1.02 3-.7.82-1.86 
+  1.45-2.98 1.36-.12-1.07.4-2.2 1.04-2.9C14.3 3.6 15.5 3.05 16.5 3zm3.04 14.27c-.55 1.27-.82 1.84-1.53 2.97-.99 
+  1.57-2.39 3.53-4.12 3.54-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.02-3.05-1.79-4.04-3.36C-.02 16.6-.32 
+  11.4 1.4 8.65 2.6 6.71 4.55 5.6 6.38 5.6c1.86 0 3.03 1.02 4.57 1.02 1.49 0 2.4-1.02 4.56-1.02 1.63 0 3.36.89 4.59 
+  2.42-4.03 2.21-3.38 7.96-.56 9.25z"/></svg>
+              Download on iPad
+            </a>
+            <a href="#top" class="btn btn-ghost btn-lg">Back to top ↑</a>
           </div>
         </div>
       </div>
+    </section>
 
-      <div class="head reveal" style="margin-bottom:18px"><h2 style="font-size:clamp(22px,3vw,30px)">The catalog — five families</h2></div>
-      <div class="fams" style="margin-bottom:46px">
-        <div class="famc glass reveal"><div class="dotc" style="background:var(--cyan)"></div><h4>Platonic <small>5</small></h4><p>All faces the same regular polygon; every vertex identical.</p></div>
-        <div class="famc glass reveal"><div class="dotc" style="background:var(--violet)"></div><h4>Archimedean <small>11/13</small></h4><p>Two or more regular polygons, every vertex identical. Two snubs still to come.</p></div>
-        <div class="famc glass reveal"><div class="dotc" style="background:var(--pink)"></div><h4>Catalan <small>11</small></h4><p>The dual of an Archimedean — every face congruent, vertices vary.</p></div>
-        <div class="famc glass reveal"><div class="dotc" style="background:var(--amber)"></div><h4>Kepler–Poinsot <small>4</small></h4><p>Regular star polyhedra with star-polygon faces or vertex figures.</p></div>
-        <div class="famc glass reveal"><div class="dotc" style="background:var(--green)"></div><h4>Johnson <small>13</small></h4><p>Convex, regular-faced, non-uniform — a procedural subset, built piece by piece.</p></div>
-      </div>
+  </main>
 
-      <div class="head reveal" style="margin-bottom:20px"><h2 style="font-size:clamp(22px,3vw,30px)">Five operators do the work</h2></div>
-      <div class="ops">
-        <div class="op glass reveal"><div class="sym" style="color:var(--cyan)">d</div><h4>Dual</h4><p>Swap every face for a vertex. Turns an icosahedron into a dodecahedron.</p></div>
-        <div class="op glass reveal"><div class="sym" style="color:var(--violet)">a</div><h4>Ambo</h4><p>Rectify — cut to edge midpoints. The route to most Archimedeans.</p></div>
-        <div class="op glass reveal"><div class="sym" style="color:var(--pink)">t</div><h4>Truncate</h4><p>Slice off each corner, opening a new face where a vertex was.</p></div>
-        <div class="op glass reveal"><div class="sym" style="color:var(--amber)">k</div><h4>Kis</h4><p>Raise a pyramid on every face — the basis of the star forms.</p></div>
-        <div class="op glass reveal"><div class="sym" style="color:var(--green)">c</div><h4>Chamfer</h4><p>Bevel every edge into a hexagon — the Goldberg-style geodesic operator.</p></div>
-      </div>
-
-      <div class="derive glass reveal">
-        <h3>How each family is born</h3>
-        <div class="chain">
-          <span class="node hl">Platonic</span>
-          <span class="arrow">→<small>truncate / ambo</small></span>
-          <span class="node">Archimedean</span>
-          <span class="arrow">→<small>dual</small></span>
-          <span class="node">Catalan</span>
-        </div>
-        <div class="chain">
-          <span class="node hl">Platonic</span>
-          <span class="arrow">→<small>kis · stellate</small></span>
-          <span class="node">Kepler–Poinsot</span>
-          <span class="node" style="background:transparent;border:none;color:var(--ink-faint)">·&nbsp;&nbsp;and</span>
-          <span class="node">Johnson</span>
-          <span class="arrow" style="opacity:0">·</span>
-          <span class="node" style="background:transparent;border:none;color:var(--ink-faint)">composed by hand</span>
-        </div>
-        <p style="color:var(--ink-dim);margin-top:18px;font-size:15px;font-weight:420">The Johnson family is the exception to the operator chain — its pyramids, cupolas and bipyramids are composed procedurally, piece by piece (13 in the catalog so far, of 92 known).</p>
-        <div class="euler">
-          Every result still obeys <b>Euler's formula</b>. For the truncated icosahedron:
-          <code>V − E + F = 60 − 90 + 32 = 2</code> ✓
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CAPTURE -->
-  <section id="capture" class="pad">
-    <div class="wrap">
-      <div class="split">
-        <div class="capture-card glass reveal">
-          <span class="eyebrow"><span class="dot"></span> from scene to story</span>
-          <h2 style="margin-top:18px">Every moment is a shot.</h2>
-          <p>Frame it, hit record, and walk away with a file ready to post. Athena keeps your work safe, frame by frame.</p>
-          <ul class="feat-list">
-            <li><span class="tick">✓</span><div><b>Photo &amp; video</b> <span>— hi-res offscreen stills and smooth H.264 capture.</span></div></li>
-            <li><span class="tick">✓</span><div><b>Scene gallery</b> <span>— save the whole scene to <code>.athena</code> and reload it exactly as it was.</span></div></li>
-            <li><span class="tick">✓</span><div><b>Undo, always</b> <span>— step back through 50 snapshots without losing your view.</span></div></li>
-          </ul>
-        </div>
-        <div class="preview glass reveal">
-          <canvas id="preview-stage"></canvas>
-          <div class="ui-pill rec"><span class="blink"></span> REC</div>
-          <div class="ui-pill tools"><span class="t on">Spin</span><span class="t">Auras</span><span class="t">Trails</span><span class="t on">Layer</span></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CRAFT -->
-  <section id="craft" class="pad">
-    <div class="wrap">
-      <div class="craft glass reveal">
-        <span class="eyebrow"><span class="dot"></span> the craft</span>
-        <h2 style="margin-top:18px">No shortcuts. <span class="grad2">Apple frameworks only.</span></h2>
-        <p>Built in SwiftUI over SceneKit with zero third-party dependencies — so it stays fast, native, and entirely yours.</p>
-        <div class="stats">
-          <div class="stat"><div class="n">44</div><div class="l">solids in the catalog</div></div>
-          <div class="stat"><div class="n">64</div><div class="l">per group, one tap</div></div>
-          <div class="stat"><div class="n">0</div><div class="l">outside dependencies</div></div>
-          <div class="stat"><div class="n">iOS 16+</div><div class="l">iPad-native</div></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CLOSER -->
-  <section id="get" class="closer">
-    <div class="wrap reveal">
-      <h2>Make something<br><span class="grad3">impossible.</span></h2>
-      <p>Athena is coming to iPad. Bring the geometry — we'll bring the light.</p>
-      <div class="hero-cta">
-        <a href="#" class="btn btn-primary"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17 2H7a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3Zm-5 18.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4Z"/></svg>Coming to iPad</a>
-        <a href="#math" class="btn btn-ghost">Read the math</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
-  <footer>
-    <div class="wrap">
-      <div class="foot glass">
-        <div class="brand"><svg class="mark" width="22" height="22" viewBox="0 0 32 32" fill="none"><path d="M16 2 L29 9.5 V22.5 L16 30 L3 22.5 V9.5 Z" stroke="url(#g1)" stroke-width="1.6" fill="rgba(90,200,250,.08)"/></svg>Athena</div>
-        <div class="fl"><a href="#try">Try it</a><a href="#effects">Effects</a><a href="#math">The math</a><a href="#get">Get it</a></div>
-        <div class="cr">Athena by Hyper4 Inc · A 3D art app for iPad · © 2026</div>
-      </div>
+  <footer class="footer">
+    <div class="footer-inner">
+      <a class="brand" href="#top">
+        <canvas class="brand-mark" data-scene="brand" width="36" height="36" aria-hidden="true"></canvas>
+        <span class="brand-name">Athena</span>
+      </a>
+      <p class="footer-tag">An interactive 3D art studio for iPad · SwiftUI + SceneKit · zero third-party code.</p>
+      <p class="footer-fine">Designed in the spirit of Apple’s Liquid Glass. Polyhedra rendered live in vanilla
+  JavaScript.</p>
     </div>
   </footer>
 
-<script>
-/* ============================================================
-   Self-contained 3D polyhedron renderer (no libraries).
-   Supports: spin, explode (per-face along normal), wireframe,
-   colour spread, and group-orbit — mirroring Athena's effects.
-   ============================================================ */
-(function(){
-  const PHI=(1+Math.sqrt(5))/2;
-  const SOLIDS={
-    icosahedron:{v:[[-1,PHI,0],[1,PHI,0],[-1,-PHI,0],[1,-PHI,0],[0,-1,PHI],[0,1,PHI],[0,-1,-PHI],[0,1,-PHI],[PHI,0,-1],[PHI,0,1],[-PHI,0,-1],[-PHI,0,1]],
-      f:[[0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],[1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],[3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],[4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1]]},
-    dodecahedron:{v:[[1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],[-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1],[0,1/PHI,PHI],[0,1/PHI,-PHI],[0,-1/PHI,PHI],[0,-1/PHI,-PHI],[1/PHI,PHI,0],[1/PHI,-PHI,0],[-1/PHI,PHI,0],[-1/PHI,-PHI,0],[PHI,0,1/PHI],[PHI,0,-1/PHI],[-PHI,0,1/PHI],[-PHI,0,-1/PHI]],
-      f:[[0,8,10,2,16],[0,16,17,1,12],[0,12,14,4,8],[1,17,3,11,9],[1,9,5,14,12],[2,10,6,15,13],[2,13,3,17,16],[3,13,15,7,11],[4,14,5,19,18],[4,18,6,10,8],[5,9,11,7,19],[6,18,19,7,15]]},
-    octahedron:{v:[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]],f:[[0,2,4],[2,1,4],[1,3,4],[3,0,4],[0,5,2],[2,5,1],[1,5,3],[3,5,0]]},
-    cube:{v:[[1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],[-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1]],f:[[0,1,3,2],[4,6,7,5],[0,4,5,1],[2,3,7,6],[0,2,6,4],[1,5,7,3]]},
-    tetrahedron:{v:[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]],f:[[0,1,2],[0,3,1],[0,2,3],[1,3,2]]}
+  <script>
+  /* ============================================================================
+     Athena — marketing site engine
+     A tiny dependency-free polyhedra renderer (canvas 2D) + page choreography.
+     Mirrors the app: lit color-spread faces, concentric wireframe "OBB" auras,
+     particle trails, group clusters.
+     ========================================================================== */
+  'use strict';
+
+  const PHI = (1 + Math.sqrt(5)) / 2;
+  const IPHI = 1 / PHI;
+  const TAU = Math.PI * 2;
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Geometry — vertices + face index-loops for the five Platonic solids. */
+  const GEO = {
+    tetrahedron: {
+      verts: [[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]],
+      faces: [[0,1,2],[0,3,1],[0,2,3],[1,3,2]],
+    },
+    cube: {
+      verts: [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]],
+      faces: [[0,1,2,3],[4,7,6,5],[0,3,7,4],[1,5,6,2],[0,4,5,1],[3,2,6,7]],
+    },
+    octahedron: {
+      verts: [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]],
+      faces: [[0,2,4],[2,1,4],[1,3,4],[3,0,4],[0,5,2],[2,5,1],[1,5,3],[3,5,0]],
+    },
+    icosahedron: {
+      verts: [
+        [-1,PHI,0],[1,PHI,0],[-1,-PHI,0],[1,-PHI,0],
+        [0,-1,PHI],[0,1,PHI],[0,-1,-PHI],[0,1,-PHI],
+        [PHI,0,-1],[PHI,0,1],[-PHI,0,-1],[-PHI,0,1],
+      ],
+      faces: [
+        [0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],
+        [1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],
+        [3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],
+        [4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1],
+      ],
+    },
+    dodecahedron: {
+      verts: [
+        [1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],
+        [-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1],
+        [0,IPHI,PHI],[0,IPHI,-PHI],[0,-IPHI,PHI],[0,-IPHI,-PHI],
+        [IPHI,PHI,0],[IPHI,-PHI,0],[-IPHI,PHI,0],[-IPHI,-PHI,0],
+        [PHI,0,IPHI],[PHI,0,-IPHI],[-PHI,0,IPHI],[-PHI,0,-IPHI],
+      ],
+      faces: [
+        [0,8,10,2,16],[0,16,17,1,12],[0,12,14,4,8],[1,17,3,11,9],
+        [1,9,5,14,12],[2,10,6,15,13],[2,13,3,17,16],[3,13,15,7,11],
+        [4,14,5,19,18],[4,18,6,10,8],[5,9,11,7,19],[6,18,19,7,15],
+      ],
+    },
   };
-  for(const k in SOLIDS){const s=SOLIDS[k];let m=0;s.v.forEach(p=>{const r=Math.hypot(p[0],p[1],p[2]);if(r>m)m=r;});s.v=s.v.map(p=>p.map(c=>c/m));}
+  GEO.truncatedIcosahedron = GEO.icosahedron;
 
-  // spin axes (from SpinAxis in Effects.swift)
-  const AXES={Tumble:norm([0.6,1,0.2]),X:[1,0,0],Y:[0,1,0],Z:[0,0,1]};
-  function norm(v){const m=Math.hypot(v[0],v[1],v[2])||1;return[v[0]/m,v[1]/m,v[2]/m];}
-  function axisRot(p,u,a){const[x,y,z]=p,[ux,uy,uz]=u,c=Math.cos(a),s=Math.sin(a),k=1-c,d=x*ux+y*uy+z*uz;
-    return[x*c+(uy*z-uz*y)*s+ux*d*k, y*c+(uz*x-ux*z)*s+uy*d*k, z*c+(ux*y-uy*x)*s+uz*d*k];}
-  function rotX(p,a){const c=Math.cos(a),s=Math.sin(a);return[p[0],p[1]*c-p[2]*s,p[1]*s+p[2]*c];}
+  // normalize to unit circumradius + precompute unique edges
+  for (const k in GEO) {
+    const g = GEO[k];
+    if (g.__ready) continue;
+    let max = 0;
+    for (const v of g.verts) max = Math.max(max, Math.hypot(v[0], v[1], v[2]));
+    g.verts = g.verts.map(v => [v[0]/max, v[1]/max, v[2]/max]);
+    const seen = new Set(), edges = [];
+    for (const f of g.faces) {
+      for (let i = 0; i < f.length; i++) {
+        const a = f[i], b = f[(i+1)%f.length];
+        const key = a < b ? a+'_'+b : b+'_'+a;
+        if (!seen.has(key)) { seen.add(key); edges.push([a,b]); }
+      }
+    }
+    g.edges = edges;
+    g.__ready = true;
+  }
 
-  // colour harmonies — exact formulas from ColorHarmony in Effects.swift
-  function wrap(x){const r=x%1;return r<0?r+1:r;}
-  function harmonyHue(name,i,n,base){switch(name){
-    case 'Rainbow':return wrap(base+i/n);
-    case 'Golden':return wrap(base+i*0.61803398875);
-    case 'Complementary':return wrap(base+(i%2===0?0:0.5));
-    case 'Split':return wrap(base+[0,0.41666,0.58333][i%3]);
-    case 'Triadic':return wrap(base+(i%3)/3);
-    case 'Tetradic':return wrap(base+(i%4)/4);
-    case 'Analogous':return wrap(base+(i-n/2)*0.055);
-    case 'Mono':return base;
-    case 'Warm':return wrap(0.95+i/n*0.17);
-    case 'Cool':return wrap(0.45+i/n*0.22);
-    case 'Pastel':return wrap(base+i/n);
-    case 'Neon':return wrap(base+i*0.37);
-    case 'Earth':return wrap(0.07+i/n*0.12);
-    case 'Ice':return wrap(0.5+i/n*0.12);
-    default:return wrap(base+i/n);}}
-  function harmonySB(name){if(name==='Pastel')return[45,1.0];if(name==='Neon')return[100,1.0];if(name==='Earth')return[60,0.82];return[78,1.0];}
+  /* Math helpers */
+  function rot(v, yaw, pitch) {
+    const cy = Math.cos(yaw), sy = Math.sin(yaw);
+    let x = v[0]*cy + v[2]*sy;
+    let z = -v[0]*sy + v[2]*cy;
+    let y = v[1];
+    const cx = Math.cos(pitch), sx = Math.sin(pitch);
+    const y2 = y*cx - z*sx;
+    const z2 = y*sx + z*cx;
+    return [x, y2, z2];
+  }
+  function hsl(h, s, l, a) {
+    h = ((h % 360) + 360) % 360;
+    return `hsla(${h.toFixed(0)},${(s*100).toFixed(0)}%,${(l*100).toFixed(0)}%,${a==null?1:a})`;
+  }
+  const clamp = (n, a, b) => n < a ? a : n > b ? b : n;
+  const lerp = (a, b, t) => a + (b - a) * t;
 
-  function renderer(canvas,opts){
-    opts=opts||{};
-    const ctx=canvas.getContext('2d');
-    const DPR=Math.min(window.devicePixelRatio||1,2);
-    let W=0,H=0;
-    const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-    function resize(){const r=canvas.getBoundingClientRect();if(r.width===W&&r.height===H)return;W=r.width;H=r.height;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
-    resize();
+  /* Body — one polyhedron instance in a scene */
+  class Body {
+    constructor(cfg) {
+      this.type = cfg.type || 'icosahedron';
+      this.geo = GEO[this.type] || GEO.icosahedron;
+      this.pos = cfg.pos || [0, 0, 0];
+      this.radius = cfg.radius != null ? cfg.radius : 1;
+      this.spin = cfg.spin || [0.18, 0.32];
+      this.yaw = cfg.yaw || 0;
+      this.pitch = cfg.pitch || 0.3;
+      this.colorMode = cfg.colorMode || 'spread';
+      this.h0 = cfg.h0 != null ? cfg.h0 : 168;
+      this.h1 = cfg.h1 != null ? cfg.h1 : 280;
+      this.hue = cfg.hue != null ? cfg.hue : 200;
+      this.wire = !!cfg.wire;
+      this.aura = cfg.aura || 0;
+      this.auraType = cfg.auraType || this.type;
+      this.explode = cfg.explode || 0;
+      this.trail = !!cfg.trail;
+      this.opacity = cfg.opacity != null ? cfg.opacity : 1;
+      this.orbit = cfg.orbit || null;
+      this.particles = [];
+      this._morph = 1;
+    }
+    setType(t) { if (GEO[t]) { this.type = t; this.geo = GEO[t]; this.auraType = t; } }
+    update(dt, t) {
+      if (!REDUCED) { this.yaw += this.spin[0]*dt; this.pitch += this.spin[1]*dt; }
+      if (this.orbit) {
+        this.orbit.a += (this.orbit.speed||0.4)*dt;
+        const r = this.orbit.r, ti = this.orbit.tilt||0;
+        this.pos = [Math.cos(this.orbit.a)*r, Math.sin(this.orbit.a)*r*Math.sin(ti),
+  Math.sin(this.orbit.a)*r*Math.cos(ti)];
+      }
+      if (this.trail) {
+        this.particles.push({ x:this.pos[0], y:this.pos[1], z:this.pos[2], life:1, hue:this._lastHue||this.hue });
+        if (this.particles.length > 60) this.particles.shift();
+        for (const p of this.particles) p.life -= dt*0.7;
+        this.particles = this.particles.filter(p => p.life > 0);
+      }
+    }
+    faceColor(i, n, t) {
+      let h;
+      if (this.colorMode === 'rainbow') h = (i*137.50776 + (REDUCED?0:t*40));
+      else if (this.colorMode === 'mono') h = this.hue;
+      else { const k = n > 1 ? i/(n-1) : 0; h = lerp(this.h0, this.h1, k); }
+      this._lastHue = h;
+      return h;
+    }
+  }
+  
+  /* Scene — owns a canvas, a camera, and a list of Bodies */
+  class Scene {
+    constructor(canvas, cfg) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext('2d');
+      this.cfg = cfg;
+      this.bodies = cfg.bodies.map(b => new Body(b));
+      this.focal = cfg.focal || 3.2;
+      this.fit = cfg.fit != null ? cfg.fit : 0.34;
+      this.parallax = cfg.parallax || 0;
+      this.px = 0; this.py = 0;
+      this.cpx = 0; this.cpy = 0;
+      this.active = true;
+      this.t = 0;
+      this.glow = cfg.glow != null ? cfg.glow : true;
+      this.resize();
+    }
+    resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const r = this.canvas.getBoundingClientRect();
+      const w = Math.max(1, r.width), h = Math.max(1, r.height);
+      this.canvas.width = Math.round(w*dpr);
+      this.canvas.height = Math.round(h*dpr);
+      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      this.w = w; this.h = h;
+    }
+    project(p, cx, cy, scale) {
+      const z = p[2];
+      const persp = this.focal / (this.focal - z);
+      return [cx + p[0]*persp*scale, cy - p[1]*persp*scale, z];
+    }
+    update(dt) {
+      this.t += dt;
+      this.cpx += (this.px - this.cpx) * Math.min(1, dt*5);
+      this.cpy += (this.py - this.cpy) * Math.min(1, dt*5);
+      for (const b of this.bodies) b.update(dt, this.t);
+    }
+    render() {
+      const ctx = this.ctx, w = this.w, h = this.h;
+      ctx.clearRect(0, 0, w, h);
+      const scale = Math.min(w, h) * this.fit;
+      const vyaw = this.cpx * this.parallax, vpitch = this.cpy * this.parallax;
+      const cx0 = w/2, cy0 = h/2;
+      const order = this.bodies.map((b,i)=>i).sort((a,b)=>this.bodies[a].pos[2]-this.bodies[b].pos[2]);
 
-    let ang=0,gAng=0,curX=0,curY=0,pX=0,pY=0;
-    const light=norm([0.4,0.7,0.9]);
-    canvas.addEventListener('pointermove',e=>{const r=canvas.getBoundingClientRect();pX=((e.clientX-r.left)/r.width-0.5);pY=((e.clientY-r.top)/r.height-0.5);});
+      for (const bi of order) {
+        const b = this.bodies[bi];
+        const m = b._morph;
+        if (m <= 0.001) continue;
+        const center = this.project(b.pos, cx0, cy0, scale);
+        const cx = center[0], cy = center[1];
+        const rad = b.radius * m;
 
-    function drawSolid(name,cx,cy,R,p){
-      const s=SOLIDS[name];const persp=3.2;
-      const rv=s.v.map(v=>rotX(axisRot(v,p.axis,p.ang),p.tilt));
-      const tot=s.f.length;
-      const [hsat,hbri]=harmonySB(p.harmony);
-      const faces=s.f.map((loop,i)=>{
-        let c=[0,0,0];loop.forEach(vi=>{c[0]+=rv[vi][0];c[1]+=rv[vi][1];c[2]+=rv[vi][2];});c=c.map(q=>q/loop.length);
-        const a=rv[loop[0]],b=rv[loop[1]],d=rv[loop[2]];
-        const u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],w=[d[0]-a[0],d[1]-a[1],d[2]-a[2]];
-        let n=[u[1]*w[2]-u[2]*w[1],u[2]*w[0]-u[0]*w[2],u[0]*w[1]-u[1]*w[0]];const nm=Math.hypot(...n)||1;n=n.map(q=>q/nm);
-        const ex=p.explode*1.5;
-        const pts=loop.map(vi=>{const vv=[rv[vi][0]+n[0]*ex,rv[vi][1]+n[1]*ex,rv[vi][2]+n[2]*ex];
-          const f=persp/(persp-vv[2]*0.85);return{x:cx+vv[0]*R*f,y:cy-vv[1]*R*f};});
-        return{pts,zc:c[2]+n[2]*ex,n,i};
-      }).sort((m,n)=>m.zc-n.zc);
-      faces.forEach(face=>{
-        const lum=0.32+0.68*Math.max(0,Math.abs(face.n[0]*light[0]+face.n[1]*light[1]+face.n[2]*light[2]));
-        const hue=harmonyHue(p.harmony,face.i,tot,p.base)*360;
-        const lig=Math.round((16+lum*44)*hbri);
-        ctx.beginPath();face.pts.forEach((pt,k)=>k?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));ctx.closePath();
-        if(p.wire){
-          ctx.strokeStyle=`hsla(${hue},${Math.max(80,hsat)}%,66%,${(0.5+0.5*lum)*p.alpha})`;ctx.lineWidth=1.3;ctx.stroke();
-        }else{
-          ctx.fillStyle=`hsla(${hue},${hsat}%,${lig}%,${p.alpha})`;ctx.fill();
-          ctx.strokeStyle=`hsla(${hue},${Math.min(95,hsat+18)}%,${Math.min(82,lig+26)}%,${p.alpha*0.85})`;ctx.lineWidth=1;ctx.stroke();
+        if (b.trail && b.particles.length) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          for (const p of b.particles) {
+            const wp = rot([p.x, p.y, p.z], 0, 0);
+            const sp = this.project(wp, cx0, cy0, scale);
+            const a = clamp(p.life, 0, 1);
+            ctx.beginPath();
+            ctx.arc(sp[0], sp[1], 2.4*a + 0.6, 0, TAU);
+            ctx.fillStyle = hsl(p.hue, 0.9, 0.65, a*0.5);
+            ctx.fill();
+          }
+          ctx.restore();
         }
+
+        const rv = b.geo.verts.map(v => rot(v, b.yaw + vyaw, b.pitch + vpitch));
+
+        if (b.aura > 0) {
+          const ag = GEO[b.auraType] || b.geo;
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          for (let s = 1; s <= b.aura; s++) {
+            const sc = 1 + s*0.26;
+            const fade = (1 - (s-1)/Math.max(1,b.aura)) * 0.5 + 0.12;
+            const arv = ag.verts.map(v => rot(v, b.yaw + vyaw, b.pitch + vpitch));
+            ctx.lineWidth = clamp(1.4 - s*0.12, 0.5, 1.4);
+            const hue = b.colorMode === 'mono' ? b.hue : lerp(b.h0, b.h1, (s-1)/Math.max(1,b.aura));
+            ctx.strokeStyle = hsl(hue, 0.85, 0.62, fade);
+            if (this.glow) { ctx.shadowColor = hsl(hue, 0.9, 0.6, fade); ctx.shadowBlur = 8; }
+            ctx.beginPath();
+            for (const e of ag.edges) {
+              const a = this.project([arv[e[0]][0]*rad*sc, arv[e[0]][1]*rad*sc, arv[e[0]][2]*rad*sc], cx, cy, scale);
+              const z = this.project([arv[e[1]][0]*rad*sc, arv[e[1]][1]*rad*sc, arv[e[1]][2]*rad*sc], cx, cy, scale);
+              ctx.moveTo(a[0], a[1]); ctx.lineTo(z[0], z[1]);
+            }
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        const faces = b.geo.faces;
+        const drawList = [];
+        for (let fi = 0; fi < faces.length; fi++) {
+          const f = faces[fi];
+          let cxn=0, cyn=0, czn=0;
+          for (const idx of f) { cxn+=rv[idx][0]; cyn+=rv[idx][1]; czn+=rv[idx][2]; }
+          cxn/=f.length; cyn/=f.length; czn/=f.length;
+          const e1 = [rv[f[1]][0]-rv[f[0]][0], rv[f[1]][1]-rv[f[0]][1], rv[f[1]][2]-rv[f[0]][2]];
+          const e2 = [rv[f[2]][0]-rv[f[0]][0], rv[f[2]][1]-rv[f[0]][1], rv[f[2]][2]-rv[f[0]][2]];
+          let nx = e1[1]*e2[2]-e1[2]*e2[1], ny = e1[2]*e2[0]-e1[0]*e2[2], nz = e1[0]*e2[1]-e1[1]*e2[0];
+          const nl = Math.hypot(nx,ny,nz) || 1; nx/=nl; ny/=nl; nz/=nl;
+          if (nz < 0) { nx=-nx; ny=-ny; nz=-nz; }
+          const ex = b.explode * 1.1;
+          const offx = cxn*ex, offy = cyn*ex, offz = czn*ex;
+          const pts = f.map(idx => this.project([
+            (rv[idx][0]+offx)*rad, (rv[idx][1]+offy)*rad, (rv[idx][2]+offz)*rad
+          ], cx, cy, scale));
+          const depth = czn + offz;
+          const light = clamp(0.42 + 0.58*nz, 0, 1);
+          const hue = b.faceColor(fi, faces.length, this.t);
+          drawList.push({ pts, depth, light, hue });
+        }
+        drawList.sort((a,b)=>a.depth-b.depth);
+
+        ctx.save();
+        ctx.globalAlpha = b.opacity;
+        for (const d of drawList) {
+          ctx.beginPath();
+          ctx.moveTo(d.pts[0][0], d.pts[0][1]);
+          for (let i = 1; i < d.pts.length; i++) ctx.lineTo(d.pts[i][0], d.pts[i][1]);
+          ctx.closePath();
+          if (b.wire) {
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = hsl(d.hue, 0.8, 0.45 + d.light*0.3, 0.9);
+            if (this.glow) { ctx.shadowColor = hsl(d.hue,0.9,0.6,0.8); ctx.shadowBlur = 6; }
+            ctx.stroke();
+          } else {
+            const grad = ctx.createLinearGradient(d.pts[0][0], d.pts[0][1], d.pts[d.pts.length-1][0],
+  d.pts[d.pts.length-1][1]);
+            grad.addColorStop(0, hsl(d.hue, 0.72, 0.30 + d.light*0.42));
+            grad.addColorStop(1, hsl(d.hue+12, 0.78, 0.22 + d.light*0.40));
+            ctx.fillStyle = grad;
+            ctx.shadowBlur = 0;
+            ctx.fill();
+            ctx.lineWidth = 0.8;
+            ctx.strokeStyle = hsl(d.hue, 0.6, 0.72, 0.18 + d.light*0.25);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+    }
+  }
+
+  /* Scene factory — read data-* config off a canvas */
+  function buildScene(canvas) {
+    const kind = canvas.dataset.scene;
+    if (kind === 'brand') {
+      return new Scene(canvas, {
+        fit: 0.36, focal: 3.4, glow: true,
+        bodies: [{ type:'octahedron', colorMode:'spread', h0:170, h1:285, spin:[0.5,0.7], radius:0.92 }],
       });
     }
+    if (kind === 'hero') {
+      return new Scene(canvas, {
+        fit: 0.26, focal: 3.0, parallax: 0.6, glow: true,
+        bodies: [
+          { type:'icosahedron', colorMode:'spread', h0:165, h1:290, spin:[0.12,0.16], radius:1.0, aura:3, trail:false },
+          { type:'tetrahedron', wire:true, colorMode:'mono', hue:175, radius:0.34, spin:[0.6,0.4],
+  orbit:{r:2.55,a:0,speed:0.45,tilt:0.5}, trail:true },
+          { type:'cube', wire:true, colorMode:'mono', hue:280, radius:0.30, spin:[0.5,0.7],
+  orbit:{r:3.05,a:2.1,speed:-0.32,tilt:1.1}, trail:true },
+          { type:'octahedron', wire:true, colorMode:'mono', hue:325, radius:0.26, spin:[0.8,0.5],
+  orbit:{r:2.8,a:4.0,speed:0.55,tilt:-0.6}, trail:true },
+        ],
+      });
+    }
+    if (kind === 'catalog') {
+      return new Scene(canvas, {
+        fit: 0.30, focal: 3.1, parallax: 0.35, glow: true,
+        bodies: [{ type:'icosahedron', colorMode:'spread', h0:168, h1:285, spin:[0.16,0.22], radius:1.0, aura:2 }],
+      });
+    }
+    const solid = canvas.dataset.solid || 'icosahedron';
+    const effect = canvas.dataset.effect || 'spread';
+    if (effect === 'groups') {
+      return new Scene(canvas, {
+        fit: 0.16, focal: 3.2, glow: true,
+        bodies: [
+          { type:'cube', colorMode:'mono', hue:150, spin:[0.4,0.3], radius:0.7, pos:[-1.4,0.7,0] },
+          { type:'octahedron', colorMode:'mono', hue:265, spin:[0.5,0.6], radius:0.7, pos:[1.4,0.6,0.3] },
+          { type:'tetrahedron', colorMode:'mono', hue:330, spin:[0.7,0.4], radius:0.62, pos:[-1.1,-1.0,0.2] },
+          { type:'icosahedron', colorMode:'mono', hue:45, spin:[0.3,0.5], radius:0.72, pos:[1.2,-1.0,0] },
+        ],
+      });
+    }
+    const body = { type: solid, spin:[0.3,0.42], radius:1.0 };
+    if (effect === 'spin')    { body.colorMode='spread'; body.h0=350; body.h1=30; body.spin=[0.55,0.7]; }
+    if (effect === 'rainbow') { body.colorMode='rainbow'; body.spin=[0.16,0.22]; }
+    if (effect === 'explode') { body.colorMode='spread'; body.h0=38; body.h1=58; }
+    if (effect === 'aura')    { body.colorMode='spread'; body.h0=165; body.h1=285; body.aura=4; body.radius=0.78; }
+    if (effect === 'trail')   { body.colorMode='spread'; body.h0=255; body.h1=320; body.trail=true;
+  body.orbit={r:1.0,a:0,speed:1.0,tilt:0.4}; body.radius=0.7; }
+    const sc = new Scene(canvas, { fit:0.30, focal:3.2, glow:true, bodies:[body] });
+    if (effect === 'explode') sc._explodePulse = true;
+    return sc;
+  }
 
-    function frame(now){
-      resize();ctx.clearRect(0,0,W,H);
-      curX+=(pX-curX)*0.05;curY+=(pY-curY)*0.05;
-      const st=opts.state?opts.state():{};
-      const spin=(st.spin!=null?st.spin:1);
-      if(!reduce){ang+=0.011*spin;gAng+=0.006;}
-      const tilt=(reduce?0.5:0.42)+curY*0.4;
-      const axis=AXES[st.axis]||AXES.Tumble;
-      const harmony=st.harmony||'Rainbow';
-      const base=(st.base!=null?st.base:0.55);
-      const cx=W/2+(opts.offsetX||0)*W, cy=H/2+(opts.offsetY||0)*H;
-      const R=Math.min(W,H)*(opts.scale||0.30);
+  /* Scene manager — single RAF, visibility gating */
+  const scenes = [];
+  let lastT = performance.now();
 
-      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.min(W,H)*0.55);
-      g.addColorStop(0,'rgba(90,160,250,0.15)');g.addColorStop(0.5,'rgba(150,90,240,0.06)');g.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-
-      ctx.save();ctx.shadowColor=`hsla(${base*360},80%,60%,0.45)`;ctx.shadowBlur=22;
-      const name=st.solid||opts.solid||'icosahedron';
-      const p={axis,ang:ang+(reduce?-0.6:curX*0.5),tilt,explode:st.explode||0,harmony,base,alpha:1,wire:false};
-
-      if(st.orbit){
-        const ring=R*0.95;
-        for(let i=0;i<6;i++){const a=gAng+i*Math.PI/3;
-          drawSolid(name, cx+Math.cos(a)*ring, cy+Math.sin(a)*ring, R*0.40, {...p,ang:ang+a*0.6});}
-      }else{
-        drawSolid(name,cx,cy,R,p);
-        const shells=st.shells||0;
-        for(let sIdx=1;sIdx<=shells;sIdx++){
-          const pulse=1+0.03*Math.sin(now*0.003+sIdx);
-          drawSolid(name,cx,cy,R*(1+sIdx*0.17)*pulse,{...p,wire:true,explode:0,alpha:0.55*Math.pow(0.72,sIdx-1)});
-        }
+  function tick(now) {
+    const dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    for (const s of scenes) {
+      if (!s.active) continue;
+      if (s._explodePulse) {
+        const b = s.bodies[0];
+        b.explode = (Math.sin(s.t*0.9) * 0.5 + 0.5) * 0.9;
       }
-      ctx.restore();
+      s.update(dt);
+      s.render();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function initScenes() {
+    document.querySelectorAll('canvas[data-scene]').forEach(c => {
+      try {
+        const s = buildScene(c);
+        s.el = c;
+        scenes.push(s);
+      } catch (e) { /* ignore a single bad canvas */ }
+    });
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) {
+        const s = scenes.find(x => x.el === en.target);
+        if (s) s.active = en.isIntersecting;
+      }
+    }, { rootMargin: '120px' });
+    scenes.forEach(s => io.observe(s.el));
+    let rt;
+    window.addEventListener('resize', () => {
+      clearTimeout(rt);
+      rt = setTimeout(() => scenes.forEach(s => s.resize()), 150);
+    });
+    requestAnimationFrame(tick);
+  }
+
+  /* Catalog interaction — swap the centerpiece solid */
+  function initCatalog() {
+    const families = document.querySelectorAll('.family');
+    const catScene = scenes.find(s => s.el && s.el.dataset.scene === 'catalog');
+    const nameEl = document.getElementById('readout-name');
+    const metaEl = document.getElementById('readout-meta');
+    if (!families.length || !catScene) return;
+    families[0].classList.add('on');
+    families.forEach(btn => {
+      btn.addEventListener('click', () => {
+        families.forEach(f => f.classList.remove('on'));
+        btn.classList.add('on');
+        const type = btn.dataset.solid;
+        const body = catScene.bodies[0];
+        animateMorph(body, type, () => {
+          if (nameEl) nameEl.textContent = btn.querySelector('b').textContent + ' family';
+          if (metaEl) metaEl.textContent = btn.dataset.info;
+        });
+        const c = getComputedStyle(btn).getPropertyValue('--fam').trim();
+        const stage = document.querySelector('.solids-stage');
+        if (stage && c) stage.style.setProperty('--stage-accent', c);
+      });
+    });
+  }
+  
+  function animateMorph(body, type, onSwap) {
+    const start = performance.now();
+    const dur = 520;
+    let swapped = false;
+    function step(now) {
+      const p = Math.min(1, (now - start) / dur);
+      if (p < 0.5) body._morph = 1 - p*2*0.85;
+      else {
+        if (!swapped) { body.setType(type); swapped = true; onSwap && onSwap(); }
+        body._morph = 0.15 + (p-0.5)*2*0.85;
+      }
+      if (p < 1) requestAnimationFrame(step);
+      else body._morph = 1;
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* Pointer parallax → hero/catalog scenes + cursor light */
+  function initPointer() {
+    const light = document.getElementById('cursor-light');
+    window.addEventListener('pointermove', (e) => {
+      const nx = (e.clientX / window.innerWidth) * 2 - 1;
+      const ny = (e.clientY / window.innerHeight) * 2 - 1;
+      for (const s of scenes) {
+        if (s.parallax) { s.px = nx; s.py = ny; }
+      }
+      if (light) { light.style.setProperty('--mx', e.clientX + 'px'); light.style.setProperty('--my', e.clientY + 'px');
+  }
+    }, { passive: true });
+  }
+
+  /* Background ambient field — drifting wireframe solids + dust */
+  function initBackground() {
+    const c = document.getElementById('bg');
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    function size() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      c.width = Math.round(innerWidth*dpr); c.height = Math.round(innerHeight*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    size();
+    window.addEventListener('resize', () => { clearTimeout(c._rt); c._rt = setTimeout(size, 150); });
+    const types = ['tetrahedron','cube','octahedron','icosahedron','dodecahedron'];
+    const N = innerWidth < 720 ? 5 : 9;
+    const items = [];
+    for (let i = 0; i < N; i++) {
+      items.push({
+        geo: GEO[types[i % types.length]],
+        x: (i*0.146 % 1), y: ((i*0.382) % 1),
+        r: 26 + (i*53 % 60),
+        yaw: i*1.3, pitch: i*0.7,
+        sy: 0.05 + (i%5)*0.015, sp: 0.04 + (i%3)*0.02,
+        drift: 0.004 + (i%4)*0.002,
+        hue: (i*137.5) % 360,
+        depth: 0.3 + (i%3)*0.25,
+      });
+    }
+    let bt = performance.now();
+    function frame(now) {
+      const dt = Math.min(0.05, (now-bt)/1000); bt = now;
+      ctx.clearRect(0,0,innerWidth,innerHeight);
+      for (const it of items) {
+        if (!REDUCED) { it.yaw += it.sy*dt; it.pitch += it.sp*dt; it.y -= it.drift*dt*0.06; if (it.y < -0.1) it.y = 1.1;
+  }
+        const cx = it.x*innerWidth, cy = it.y*innerHeight;
+        const rv = it.geo.verts.map(v => rot(v, it.yaw, it.pitch));
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = hsl(it.hue, 0.5, 0.6, 0.10*it.depth);
+        ctx.beginPath();
+        for (const e of it.geo.edges) {
+          const a = rv[e[0]], b = rv[e[1]];
+          const pa = 3.4/(3.4-a[2]), pb = 3.4/(3.4-b[2]);
+          ctx.moveTo(cx + a[0]*pa*it.r, cy - a[1]*pa*it.r);
+          ctx.lineTo(cx + b[0]*pb*it.r, cy - b[1]*pb*it.r);
+        }
+        ctx.stroke();
+      }
       requestAnimationFrame(frame);
     }
-    requestAnimationFrame(frame);
+    if (REDUCED) frame(bt); else requestAnimationFrame(frame);
+  }
+  
+  /* Scroll reveals, tilt cards, stat count-up */
+  function initReveals() {
+    const els = Array.from(document.querySelectorAll('.reveal'));
+    const show = el => el.classList.add('in');
+    const vh = window.innerHeight;
+    els.forEach(el => { if (el.getBoundingClientRect().top < vh * 0.92) show(el); });
+    if (!('IntersectionObserver' in window)) { els.forEach(show); return; }
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) {
+        if (en.isIntersecting) { show(en.target); io.unobserve(en.target); }
+      }
+    }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+    els.forEach(el => { if (!el.classList.contains('in')) io.observe(el); });
+    setTimeout(() => els.forEach(show), 2200);
   }
 
-  /* ---- interactive hero ---- */
-  const heroState={solid:'icosahedron',spin:1,axis:'Tumble',harmony:'Rainbow',base:0.55,explode:0,shells:0,orbit:false};
-  const stage=document.getElementById('stage');
-  if(stage) renderer(stage,{scale:0.30,offsetX:0.24,offsetY:0.06,state:()=>heroState});
-
-  // wire controls
-  // real catalog facts (from PlatonicSolid.swift)
-  const FACTS={
-    icosahedron:{vef:'12 · 30 · 20',dual:'Dodecahedron',dih:'138.19°',face:'Triangle'},
-    dodecahedron:{vef:'20 · 30 · 12',dual:'Icosahedron',dih:'116.57°',face:'Pentagon'},
-    octahedron:{vef:'6 · 12 · 8',dual:'Cube',dih:'109.47°',face:'Triangle'},
-    cube:{vef:'8 · 12 · 6',dual:'Octahedron',dih:'90.00°',face:'Square'},
-    tetrahedron:{vef:'4 · 6 · 4',dual:'Tetrahedron (self-dual)',dih:'70.53°',face:'Triangle'}
-  };
-  function showFacts(name){
-    const f=FACTS[name];if(!f)return;
-    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-    set('f-vef',f.vef);set('f-dual',f.dual);set('f-dih',f.dih);set('f-face',f.face);
-  }
-  showFacts('icosahedron');
-
-  document.querySelectorAll('.chip[data-solid]').forEach(c=>{
-    c.addEventListener('click',()=>{
-      document.querySelectorAll('.chip[data-solid]').forEach(x=>x.classList.remove('on'));
-      c.classList.add('on');heroState.solid=c.dataset.solid;showFacts(c.dataset.solid);
+  function initTilt() {
+    if (window.matchMedia('(hover:none)').matches) return;
+    document.querySelectorAll('.tilt').forEach(card => {
+      card.addEventListener('pointermove', (e) => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left)/r.width - 0.5;
+        const py = (e.clientY - r.top)/r.height - 0.5;
+        card.style.setProperty('--rx', (-py*6).toFixed(2) + 'deg');
+        card.style.setProperty('--ry', (px*8).toFixed(2) + 'deg');
+        card.style.setProperty('--gx', (px*100+50) + '%');
+        card.style.setProperty('--gy', (py*100+50) + '%');
+      });
+      card.addEventListener('pointerleave', () => {
+        card.style.setProperty('--rx','0deg'); card.style.setProperty('--ry','0deg');
+      });
     });
-  });
-  const bind=(id,key,fn)=>{const el=document.getElementById(id);if(el)el.addEventListener('input',()=>heroState[key]=fn(el.value));};
-  bind('r-spin','spin',v=>+v);bind('r-explode','explode',v=>+v);bind('r-shells','shells',v=>+v);bind('r-hue','base',v=>+v);
-  bind('m-axis','axis',v=>v);bind('m-harmony','harmony',v=>v);
-  const ms=document.getElementById('m-axis'),mh=document.getElementById('m-harmony');
-  if(ms)ms.addEventListener('change',()=>heroState.axis=ms.value);
-  if(mh)mh.addEventListener('change',()=>heroState.harmony=mh.value);
-  const tog=(id,key)=>{const el=document.getElementById(id);if(el)el.addEventListener('click',()=>{el.classList.toggle('on');heroState[key]=el.classList.contains('on');});};
-  tog('t-orbit','orbit');
+  }
 
-  /* ---- interface mockup mini-scene (Shells / OBB on, Cool harmony) ---- */
-  const app=document.getElementById('appscene');
-  if(app) renderer(app,{scale:0.26,state:()=>({solid:'dodecahedron',spin:0.7,axis:'Tumble',harmony:'Cool',base:0.52,explode:0,shells:3,orbit:false})});
+  function initCounts() {
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) {
+        if (!en.isIntersecting) continue;
+        const el = en.target, target = +el.dataset.count;
+        io.unobserve(el);
+        if (REDUCED || target === 0) { el.textContent = target; continue; }
+        const start = performance.now(), dur = 1100;
+        function step(now) {
+          const p = clamp((now-start)/dur, 0, 1);
+          const eased = 1 - Math.pow(1-p, 3);
+          el.textContent = Math.round(target*eased);
+          if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+    }, { threshold: 0.6 });
+    document.querySelectorAll('[data-count]').forEach(el => io.observe(el));
+  }
 
-  /* ---- capture preview ---- */
-  const prev=document.getElementById('preview-stage');
-  if(prev){let n=0;renderer(prev,{scale:0.34,state:()=>{n++;const cyc=Math.floor(n/420)%3;return{solid:['icosahedron','dodecahedron','octahedron'][cyc],spin:1,axis:'Y',harmony:'Rainbow',base:0.55,explode:0,shells:0,orbit:false};}});}
-})();
+  function initNav() {
+    const nav = document.querySelector('.nav-wrap');
+    if (!nav) return;
+    const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+  
+  function init() {
+    initScenes();
+    initBackground();
+    initCatalog();
+    initPointer();
+    initReveals();
+    initTilt();
+    initCounts();
+    initNav();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  </script>
+  </body>
+  </html>
 
-/* ===== mobile menu ===== */
-(function(){const b=document.querySelector('.nav-burger'),m=document.getElementById('mobileMenu');if(!b||!m)return;
-  b.addEventListener('click',()=>m.classList.toggle('open'));
-  m.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>m.classList.remove('open')));})();
 
-/* ===== scroll reveal ===== */
-(function(){const els=document.querySelectorAll('.reveal');
-  if(!('IntersectionObserver'in window)){els.forEach(e=>e.classList.add('in'));return;}
-  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:0.12});
-  els.forEach((e,i)=>{e.style.transitionDelay=(Math.min(i%3,2)*0.08)+'s';io.observe(e);});
-  window.addEventListener('load',()=>setTimeout(()=>els.forEach(e=>e.classList.add('in')),2500));})();
-
-/* ===== nav scroll tint ===== */
-(function(){const nav=document.querySelector('.nav');addEventListener('scroll',()=>{nav.style.background=scrollY>20?'rgba(255,255,255,0.085)':'rgba(255,255,255,0.055)';});})();
-</script>
-</body>
-</html>
