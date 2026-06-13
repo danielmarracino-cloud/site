@@ -1,1516 +1,559 @@
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#040509" />
-  <title>Athena — A 3D rendering tool for geometric solids</title>
-  <meta name="description" content="Athena — A 3D rendering tool for geometric solids. Platonic, Archimedean, Catalan, 
-  Kepler–Poinsot, Goldberg and Johnson solids." />
-  <meta property="og:title" content="Athena — A 3D rendering tool for geometric solids" />
-  <meta property="og:description" content="Platonic · Archimedean · Catalan · Kepler–Poinsot · Goldberg · Johnson." />
-  <meta property="og:type" content="website" />
-  <style>
-  /* ===========================================================================
-     Athena — Liquid Glass theme
-     =========================================================================== */
-
-  :root {
-    --bg:        #040509;
-    --bg-2:      #070810;
-    --ink:       #dde2f2;
-    --ink-dim:   #828bab;
-    --ink-faint: #5a627f;
-
-    /* muted, darker accents */
-    --teal:   #4bb3a6;
-    --blue:   #6478c4;
-    --violet: #8f74c2;
-    --pink:   #c071a0;
-    --gold:   #c9a85e;
-    --mint:   #74c79e;
-
-    /* liquid glass tokens */
-    --glass-bg:     rgba(255,255,255,0.04);
-    --glass-bg-2:   rgba(255,255,255,0.07);
-    --glass-stroke: rgba(255,255,255,0.10);
-    --glass-hi:     rgba(255,255,255,0.4);
-    --blur:         22px;
-
-    --grad: linear-gradient(115deg, var(--teal) 0%, var(--blue) 42%, var(--violet) 72%, var(--pink) 100%);
-    --shadow-lg: 0 24px 60px -20px rgba(0,0,0,.8), 0 8px 24px -12px rgba(0,0,0,.6);
-    --radius: 26px;
-
-    --maxw: 1200px;
-    --ease: cubic-bezier(.22,.7,.27,1);
-  }
-  
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-                 system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    color: var(--ink);
-    background: var(--bg);
-    line-height: 1.5;
-    overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-    letter-spacing: -0.01em;
-  }
-
-  a { color: inherit; text-decoration: none; }
-  canvas { display: block; }
-
-  /* --- Ambient background ---------------------------------------------------- */
-  .bg-canvas {
-    position: fixed; inset: 0; z-index: 0;
-    width: 100vw; height: 100vh; pointer-events: none;
-  }
-  .aurora { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-  .aurora .blob {
-    position: absolute; border-radius: 50%;
-    filter: blur(100px); opacity: .32; mix-blend-mode: screen;
-    animation: drift 26s var(--ease) infinite alternate;
-  }
-  .blob-a { width: 58vw; height: 58vw; left: -16vw; top: -22vh;
-    background: radial-gradient(circle at 50% 50%, rgba(58,140,128,.5), transparent 64%); }
-  .blob-b { width: 62vw; height: 62vw; right: -22vw; top: 6vh;
-    background: radial-gradient(circle at 50% 50%, rgba(78,86,150,.45), transparent 64%);
-    animation-delay: -8s; }
-  .blob-c { width: 54vw; height: 54vw; left: 18vw; bottom: -28vh;
-    background: radial-gradient(circle at 50% 50%, rgba(150,80,120,.34), transparent 64%);
-    animation-delay: -15s; }
-  .aurora .grain {
-    position: absolute; inset: 0; opacity: .035; mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120'
-  height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9'
-  numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-  @keyframes drift {
-    0%   { transform: translate3d(0,0,0) scale(1); }
-    100% { transform: translate3d(4vw,5vh,0) scale(1.14); }
-  }
-  main, .nav-wrap, .footer { position: relative; z-index: 2; }
-
-  /* cursor light */
-  .cursor-light {
-    position: fixed; inset: 0; z-index: 1; pointer-events: none;
-    background: radial-gradient(220px 220px at var(--mx,50%) var(--my,40%),
-                rgba(160,180,255,.10), transparent 70%);
-    transition: background .12s linear;
-  }
-  @media (hover:none) { .cursor-light { display: none; } }
-
-  /* --- Glass primitive ------------------------------------------------------- */
-  .glass {
-    position: relative;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-stroke);
-    -webkit-backdrop-filter: blur(var(--blur)) saturate(165%);
-    backdrop-filter: blur(var(--blur)) saturate(165%);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.22),
-      inset 0 -1px 1px rgba(0,0,0,.25),
-      var(--shadow-lg);
-  }
-  /* top specular highlight that every glass surface shares */
-  .glass::before {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-    background: linear-gradient(180deg, rgba(255,255,255,.16), transparent 42%);
-    opacity: .9;
-  }
-  
-  /* --- Buttons --------------------------------------------------------------- */
-  .btn {
-    display: inline-flex; align-items: center; gap: .55em;
-    font-weight: 600; font-size: .95rem; letter-spacing: -.01em;
-    padding: .8em 1.35em; border-radius: 999px; cursor: pointer;
-    border: 1px solid var(--glass-stroke);
-    -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
-    transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .25s var(--ease);
-    white-space: nowrap;
-  }
-  .btn .ico { width: 1.05em; height: 1.05em; fill: currentColor; }
-  .btn-lg { font-size: 1.02rem; padding: .95em 1.6em; }
-  .btn-ghost { background: var(--glass-bg); color: var(--ink); }
-  .btn-ghost:hover { background: var(--glass-bg-2); transform: translateY(-2px); }
-  .btn-accent {
-    color: #06121a; border: none;
-    background: var(--grad); background-size: 200% 200%;
-    box-shadow: 0 10px 30px -8px rgba(124,155,255,.55), inset 0 1px 0 rgba(255,255,255,.5);
-    animation: hue-pan 9s ease infinite;
-  }
-  .btn-accent:hover { transform: translateY(-2px); box-shadow: 0 16px 40px -8px rgba(124,155,255,.7), inset 0 1px 0
-  rgba(255,255,255,.6); }
-  @keyframes hue-pan { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-  .btn-pill { padding: .6em 1.15em; font-size: .9rem; }
-
-  /* --- Nav ------------------------------------------------------------------- */
-  .nav-wrap {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
-    display: flex; justify-content: center;
-    padding: 16px;
-    transition: padding .3s var(--ease);
-  }
-  .nav-wrap.scrolled { padding: 9px 16px; }
-  .nav {
-    width: 100%; max-width: var(--maxw);
-    display: flex; align-items: center; gap: 18px;
-    padding: 9px 12px 9px 16px; border-radius: 999px;
-  }
-  .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; }
-  .brand-mark { width: 38px; height: 38px; }
-  .brand-name { font-size: 1.16rem; letter-spacing: -.02em;
-    background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .nav-links { display: flex; gap: 6px; margin-left: auto; }
-  .nav-links a {
-    padding: .5em .85em; border-radius: 999px; color: var(--ink-dim);
-    font-size: .92rem; font-weight: 500; transition: color .2s, background .2s;
-  }
-  .nav-links a:hover { color: var(--ink); background: var(--glass-bg); }
-  .nav-cta { margin-left: 4px; }
-  @media (max-width: 720px) { .nav-links { display: none; } .nav-cta { margin-left: auto; } }
-
-  /* --- Layout ---------------------------------------------------------------- */
-  .section { max-width: var(--maxw); margin: 0 auto; padding: 120px 22px; position: relative; }
-  .section-head { max-width: 760px; margin-bottom: 56px; }
-  .kicker {
-    font-size: .82rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--teal); margin-bottom: 14px;
-  }
-  h2 { font-size: clamp(2rem, 4.6vw, 3.4rem); line-height: 1.05; letter-spacing: -.03em; font-weight: 700; }
-  .lede { margin-top: 18px; font-size: clamp(1rem,1.6vw,1.18rem); color: var(--ink-dim); max-width: 60ch; }
-  .grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
-
-  /* --- Hero ------------------------------------------------------------------ */
-  .hero {
-    position: relative; min-height: 100svh;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; padding: 120px 22px 80px; overflow: hidden;
-  }
-  .hero-scene { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
-  .hero-vignette { position: absolute; inset: 0; z-index: 1; pointer-events: none;
-    background: radial-gradient(120% 90% at 50% 42%, transparent 38%, rgba(6,7,13,.72) 100%); }
-  .hero-inner { position: relative; z-index: 2; max-width: 880px; }
-
-  .eyebrow {
-    display: inline-flex; align-items: center; gap: .6em;
-    padding: .5em 1em; border-radius: 999px; font-size: .85rem; font-weight: 600;
-    color: var(--ink-dim); margin-bottom: 26px;
-  }
-  .glass-chip {
-    background: var(--glass-bg); border: 1px solid var(--glass-stroke);
-    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
-  }
-  .eyebrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal);
-    box-shadow: 0 0 12px var(--teal); animation: pulse 2.4s ease infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .5; transform: scale(.7); } }
-
-  .hero-title { font-size: clamp(2.6rem, 7vw, 5.4rem); line-height: 1.02; letter-spacing: -.04em; font-weight: 750; }
-  .hero-title .line { display: block; }
-  .hero-sub { margin: 28px auto 0; max-width: 60ch; font-size: clamp(1.05rem,1.9vw,1.3rem); color: var(--ink-dim); }
-  .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 38px; }
-
-  .hero-stats {
-    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 54px; list-style: none;
-  }
-  .stat {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    min-width: 120px; padding: 18px 20px; border-radius: 20px;
-  }
-  .stat b { font-size: 2rem; font-weight: 750; letter-spacing: -.03em;
-    background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .stat span { font-size: .82rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .1em; }
-
-  .scroll-hint { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); z-index: 3;
-    width: 24px; height: 38px; border: 1.5px solid var(--glass-stroke); border-radius: 14px; }
-  .scroll-hint span { position: absolute; top: 7px; left: 50%; width: 4px; height: 7px; border-radius: 4px;
-    background: var(--teal); transform: translateX(-50%); animation: scroll 1.8s var(--ease) infinite; }
-  @keyframes scroll { 0% { opacity: 0; transform: translate(-50%,0); } 30% { opacity: 1; } 100% { opacity: 0; transform:
-  translate(-50%,14px); } }
-
-  /* --- Marquee --------------------------------------------------------------- */
-  .marquee { overflow: hidden; padding: 22px 0; border-top: 1px solid rgba(255,255,255,.06);
-    border-bottom: 1px solid rgba(255,255,255,.06);
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-            mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
-  .marquee-track { display: inline-flex; gap: 26px; white-space: nowrap; align-items: center;
-    animation: scrollx 46s linear infinite; }
-  .marquee-track span { font-size: 1.05rem; font-weight: 600; color: var(--ink-faint); letter-spacing: -.01em; }
-  .marquee-track span:nth-child(odd) { color: var(--ink-dim); }
-  @keyframes scrollx { to { transform: translateX(-50%); } }
-
-  /* --- Cinematic motion sections --------------------------------------------- */
-  .cine { position: relative; min-height: 92vh; display: grid; place-items: center; overflow: hidden; text-align:
-  center; padding: 120px 22px; }
-  .cine-band { min-height: 78vh; }
-  .cine-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
-  .cine::before { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
-    background: radial-gradient(125% 95% at 50% 50%, transparent 28%, rgba(6,7,13,.8) 100%); }
-  .cine-fx { position: absolute; inset: -25%; z-index: 1; pointer-events: none; mix-blend-mode: screen; opacity: .32;
-  filter: blur(56px);
-    background: conic-gradient(from 0deg at 50% 50%, rgba(58,140,128,.13), rgba(78,86,150,.13), rgba(150,80,120,.13),
-  rgba(58,140,128,.13));
-    animation: spinfx 50s linear infinite; }
-  .cine-fx-2 { animation-duration: 68s; animation-direction: reverse; opacity: .24; }
-  @keyframes spinfx { to { transform: rotate(360deg); } }
-  .cine-inner { position: relative; z-index: 3; max-width: 760px; }
-  .cine-inner h2 { font-size: clamp(2.4rem, 6vw, 4.6rem); }
-  .lede.center { margin-left: auto; margin-right: auto; }
-  .cine-tags { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 28px; }
-  .cine-tags .glass-chip { padding: .5em 1em; border-radius: 999px; font-size: .84rem; font-weight: 600; color:
-  var(--ink-dim); }
-  @media (prefers-reduced-motion: reduce) { .cine-fx { animation: none !important; } }
-
-  /* --- Catalog / solids ------------------------------------------------------ */
-  .solids-layout { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; }
-  .solids-stage { position: relative; aspect-ratio: 1/1; --stage-accent: var(--teal); }
-  .catalog-scene { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
-  .stage-ring {
-    position: absolute; inset: 8%; border-radius: 50%; z-index: 1;
-    border: 1px solid rgba(255,255,255,.06);
-    box-shadow: inset 0 0 120px -40px var(--stage-accent), 0 0 90px -50px var(--stage-accent);
-    background: radial-gradient(circle, color-mix(in srgb, var(--stage-accent) 10%, transparent), transparent 62%);
-    transition: --stage-accent .5s, box-shadow .5s;
-  }
-  .stage-readout {
-    position: absolute; left: 50%; bottom: 4%; transform: translateX(-50%); z-index: 3;
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 12px 22px; border-radius: 16px; text-align: center; min-width: 60%;
-  }
-  .readout-name { font-weight: 700; font-size: 1.05rem; }
-  .readout-meta { font-size: .8rem; color: var(--ink-faint); }
-
-  .family-list { display: flex; flex-direction: column; gap: 10px; }
-  .family {
-    display: flex; align-items: center; gap: 14px; text-align: left;
-    padding: 16px 18px; border-radius: 18px; cursor: pointer; color: var(--ink);
-    font: inherit; transition: transform .25s var(--ease), background .25s, border-color .25s;
-  }
-  .family:hover { transform: translateX(4px); background: var(--glass-bg-2); }
-  .family.on { border-color: color-mix(in srgb, var(--fam) 60%, transparent);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 0 30px -12px var(--fam), var(--shadow-lg); }
-  .family-dot { width: 14px; height: 14px; border-radius: 50%; flex: none;
-    background: var(--fam); box-shadow: 0 0 14px var(--fam); }
-  .family-text { display: flex; flex-direction: column; }
-  .family-text b { font-size: 1.02rem; font-weight: 650; }
-  .family-text i { font-style: normal; font-size: .84rem; color: var(--ink-faint); }
-  .family-n { margin-left: auto; font-size: 1.4rem; font-weight: 750; color: var(--ink-faint);
-    font-variant-numeric: tabular-nums; }
-  .family.on .family-n { color: var(--fam); }
-
-  /* --- Effect cards ---------------------------------------------------------- */
-  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-  .card {
-    border-radius: var(--radius); overflow: hidden; transform-style: preserve-3d;
-    transform: perspective(900px) rotateX(var(--rx,0)) rotateY(var(--ry,0));
-    transition: transform .3s var(--ease), box-shadow .3s var(--ease);
-  }
-  .card:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 40px 80px -30px rgba(0,0,0,.8); }
-  .card::after { /* moving sheen on tilt */
-    content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
-    background: radial-gradient(280px 180px at var(--gx,50%) var(--gy,0%), rgba(255,255,255,.12), transparent 60%);
-    opacity: 0; transition: opacity .3s; mix-blend-mode: screen;
-  }
-  .card:hover::after { opacity: 1; }
-  .card-demo { position: relative; aspect-ratio: 16/11; background:
-    radial-gradient(120% 120% at 50% 30%, rgba(255,255,255,.04), transparent 70%); }
-  .card-demo canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .card-body { padding: 22px 24px 26px; }
-  .card-body h3 { display: flex; align-items: center; gap: 12px; font-size: 1.22rem; font-weight: 680; letter-spacing:
-  -.02em; }
-  .card-body p { margin-top: 10px; color: var(--ink-dim); font-size: .96rem; }
-  .card-ico {
-    display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; flex: none;
-    font-size: 1.05rem; color: var(--c);
-    background: color-mix(in srgb, var(--c) 16%, transparent);
-    border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
-    box-shadow: 0 0 18px -6px var(--c);
-  }
-  .feature-aura { grid-column: auto; }
-
-  /* --- Interface split ------------------------------------------------------- */
-  .section-split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
-  .checklist { list-style: none; margin-top: 26px; display: flex; flex-direction: column; gap: 12px; }
-  .checklist li { display: flex; gap: 12px; align-items: flex-start; color: var(--ink-dim); font-size: 1rem; }
-  .checklist span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; flex: none;
-    background: color-mix(in srgb, var(--teal) 18%, transparent); color: var(--teal);
-    border: 1px solid color-mix(in srgb, var(--teal) 40%, transparent); font-size: .75rem; }
-
-  .device { border-radius: 32px; padding: 16px; position: relative; aspect-ratio: 4/3; }
-  .device-canvas { position: absolute; inset: 16px; border-radius: 20px; overflow: hidden;
-    background: radial-gradient(120% 120% at 50% 30%, rgba(124,108,255,.08), transparent 70%); }
-  .device-canvas canvas { width: 100%; height: 100%; }
-  .tool-strip {
-    position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 3;
-    display: flex; gap: 8px; padding: 8px 10px; border-radius: 18px;
-  }
-  .tool { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 11px;
-    color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent);
-    border: 1px solid transparent; font-size: .95rem; transition: transform .2s; }
-  .tool.active { border-color: color-mix(in srgb, var(--c) 65%, transparent);
-    box-shadow: 0 0 18px -4px var(--c); transform: translateY(-3px); background: color-mix(in srgb, var(--c) 24%,
-  transparent); }
-  .float-panel { position: absolute; top: 22px; right: 22px; z-index: 3; width: 190px;
-    border-radius: 18px; padding: 14px; }
-  .float-panel header { font-weight: 700; font-size: .92rem; color: var(--c); margin-bottom: 12px; }
-  .float-panel .row { display: flex; align-items: center; gap: 10px; margin: 9px 0; }
-  .float-panel label { font-size: .76rem; color: var(--ink-faint); width: 56px; flex: none; }
-  .float-panel .track { flex: 1; height: 6px; border-radius: 6px; background: rgba(255,255,255,.1); overflow: hidden; }
-  .float-panel .track i { display: block; height: 100%; border-radius: 6px;
-    background: var(--grad); box-shadow: 0 0 10px rgba(124,155,255,.6); }
-
-  /* --- Capture --------------------------------------------------------------- */
-  .capture-grid { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: auto auto; gap: 22px; }
-  .cap { border-radius: var(--radius); padding: 26px; }
-  .cap.big { grid-row: span 2; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
-  .cap h3 { font-size: 1.2rem; font-weight: 660; letter-spacing: -.02em; }
-  .cap p { margin-top: 8px; color: var(--ink-dim); font-size: .95rem; }
-  .cap-view { position: relative; aspect-ratio: 16/10;
-    background: radial-gradient(120% 120% at 50% 30%, rgba(255,143,208,.08), transparent 70%); }
-  .cap-view canvas { width: 100%; height: 100%; }
-  .cap-text { padding: 24px 26px 28px; }
-  .viewfinder { position: absolute; inset: 22px; pointer-events: none; }
-  .viewfinder span { position: absolute; width: 22px; height: 22px; border: 2px solid rgba(255,255,255,.6); }
-  .viewfinder span:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; }
-  .viewfinder span:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; }
-  .viewfinder span:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; }
-  .viewfinder span:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; }
-  .viewfinder .rec { position: absolute; top: -2px; left: 50%; transform: translateX(-50%);
-    font-size: .72rem; font-weight: 700; letter-spacing: .12em; color: #ff7a7a; font-style: normal;
-    display: flex; align-items: center; gap: 6px; }
-  .viewfinder .rec::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #ff5a5a;
-    box-shadow: 0 0 10px #ff5a5a; animation: pulse 1.4s ease infinite; }
-
-  /* --- CTA ------------------------------------------------------------------- */
-  .cta { padding-top: 40px; }
-  .cta-card { position: relative; border-radius: 40px; overflow: hidden; padding: 0; }
-  .cta-bg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .5; z-index: 0; }
-  .cta-inner { position: relative; z-index: 2; text-align: center; padding: 90px 24px;
-    background: radial-gradient(120% 120% at 50% 40%, transparent, rgba(6,7,13,.55)); }
-  .cta-inner h2 { font-size: clamp(2.4rem,6vw,4.4rem); }
-  .cta-inner p { margin: 18px auto 0; max-width: 48ch; color: var(--ink-dim); font-size: 1.1rem; }
-  .cta-inner .hero-cta { margin-top: 34px; }
-
-  /* --- Footer ---------------------------------------------------------------- */
-  .footer { border-top: 1px solid rgba(255,255,255,.06); padding: 56px 22px; margin-top: 40px; }
-  .footer-inner { max-width: var(--maxw); margin: 0 auto; display: flex; flex-direction: column; gap: 10px; align-items:
-  flex-start; }
-  .footer-tag { color: var(--ink-dim); font-size: .95rem; }
-  .footer-fine { color: var(--ink-faint); font-size: .85rem; }
-
-  /* --- Reveal animation ------------------------------------------------------ */
-  .reveal { opacity: 0; transform: translateY(26px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
-  .reveal.in { opacity: 1; transform: none; }
-  .hero .reveal { transition-delay: .05s; }
-  .hero-title.reveal.in { transition-delay: .12s; }
-  .hero-sub.reveal.in { transition-delay: .22s; }
-  .hero-cta.reveal.in { transition-delay: .32s; }
-  .hero-stats.reveal.in { transition-delay: .42s; }
-  @media (prefers-reduced-motion: reduce) {
-    .reveal { opacity: 1; transform: none; transition: none; }
-    .marquee-track, .blob, .btn-accent { animation: none !important; }
-  }
-
-  /* --- Responsive ------------------------------------------------------------ */
-  @media (max-width: 960px) {
-    .solids-layout { grid-template-columns: 1fr; }
-    .solids-stage { max-width: 460px; margin: 0 auto; width: 100%; }
-    .cards { grid-template-columns: repeat(2, 1fr); }
-    .section-split { grid-template-columns: 1fr; gap: 40px; }
-    .capture-grid { grid-template-columns: 1fr; }
-    .cap.big { grid-row: auto; }
-  }
-  @media (max-width: 640px) {
-    .section { padding: 84px 18px; }
-    .cards { grid-template-columns: 1fr; }
-    .hero-stats { gap: 8px; }
-    .stat { min-width: calc(50% - 8px); }
-    .device { aspect-ratio: 3/4; }
-    .float-panel { width: 150px; top: 14px; right: 14px; }
-    .cine { min-height: 86vh; }
-    .cine-band { min-height: 70vh; }
-  }
-
-  </style>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9z
-  dmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjY0IiB5Mj0iNj
-  QiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjNWVlN2Q2Ii8+CiAgICAgIDxz
-  dG9wIG9mZnNldD0iLjUiIHN0b3AtY29sb3I9IiM3YzliZmYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZmY4ZmQwIi8+CiAgIC
-  A8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0iIzBhMGMxNiIvPgogIDxn
-  IGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnKSIgc3Ryb2tlLXdpZHRoPSIyLjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgogICAgPHBhdGggZD0iTT
-  MyIDggTDU0IDMyIEwzMiA1NiBMMTAgMzIgWiIvPgogICAgPHBhdGggZD0iTTMyIDggTDMyIDU2IE0xMCAzMiBMNTQgMzIiLz4KICAgIDxwYXRoIGQ9Ik0z
-  MiA4IEwyMSAzMiBMMzIgNTYgTDQzIDMyIFoiLz4KICA8L2c+Cjwvc3ZnPgo=" />
-  </head>
-  <body>
-
-  <!-- Ambient layers ------------------------------------------------------->
-  <canvas id="bg" class="bg-canvas" aria-hidden="true"></canvas>
-  <div class="aurora" aria-hidden="true">
-    <span class="blob blob-a"></span>
-    <span class="blob blob-b"></span>
-    <span class="blob blob-c"></span>
-    <span class="grain"></span>
-  </div>
-  <div id="cursor-light" class="cursor-light" aria-hidden="true"></div>
-  
-  <!-- Nav ------------------------------------------------------------------>
-  <header class="nav-wrap">
-    <nav class="nav glass" aria-label="Primary">
-      <a class="brand" href="#top" aria-label="Athena">
-        <canvas class="brand-mark" data-scene="brand" width="40" height="40" aria-hidden="true"></canvas>
-        <span class="brand-name">Athena</span>
-      </a>
-      <div class="nav-links">
-        <a href="#showcase">Showcase</a>
-        <a href="#solids">Solids</a>
-        <a href="#effects">Functions</a>
-        <a href="#trails">Trails</a>
-        <a href="#capture">Capture</a>
-      </div>
-      <a href="#showcase" class="btn btn-pill btn-accent nav-cta">Showcase</a>
-    </nav>
-  </header>
-
-  <main id="top">
-
-    <!-- Hero --------------------------------------------------------------->
-    <section class="hero" id="hero">
-      <canvas id="hero-scene" class="hero-scene" data-scene="hero" aria-hidden="true"></canvas>
-      <div class="hero-vignette" aria-hidden="true"></div>
-
-      <div class="hero-inner">
-        <div class="eyebrow glass-chip reveal">
-          <span class="dot"></span> V − E + F = 2
-        </div>
-
-        <h1 class="hero-title reveal">
-          <span class="line grad-text">Athena</span>
-        </h1>
-  
-        <p class="hero-sub reveal">A 3D rendering tool for geometric solids.</p>
-
-        <div class="hero-cta reveal">
-          <a href="#showcase" class="btn btn-accent btn-lg">Showcase</a>
-          <a href="#solids" class="btn btn-ghost btn-lg">Catalog</a>
-        </div>
-
-        <ul class="hero-stats reveal" aria-label="Counts">
-          <li class="glass stat"><b data-count="47">47</b><span>Solids</span></li>
-          <li class="glass stat"><b data-count="6">6</b><span>Families</span></li>
-          <li class="glass stat"><b data-count="60">60</b><span>FPS</span></li>
-          <li class="glass stat"><b data-count="0">0</b><span>Dependencies</span></li>
-        </ul>
-      </div>
-
-      <div class="scroll-hint" aria-hidden="true"><span></span></div>
-    </section>
-
-    <!-- Showcase (cinematic) ----------------------------------------------->
-    <section class="cine" id="showcase">
-      <canvas class="cine-canvas" data-scene="showcase" aria-hidden="true"></canvas>
-      <div class="cine-fx" aria-hidden="true"></div>
-      <div class="cine-inner">
-        <p class="kicker reveal">OBB shells</p>
-        <h2 class="reveal">Nested cages.<br /><span class="grad-text">Trails of light.</span></h2>
-        <p class="lede center reveal">
-          Concentric wireframe shells — cube, dodecahedron, icosahedron, octahedron —
-          counter-rotating around a color-spread icosahedron, with satellites on orbits.
-        </p>
-        <div class="cine-tags reveal">
-          <span class="glass-chip">7 OBB shells</span>
-          <span class="glass-chip">4 satellites</span>
-          <span class="glass-chip">counter-rotation</span>
-          <span class="glass-chip">particle field</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Marquee (shape names) ---------------------------------------------->
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee-track">
-        <span>Tetrahedron</span><span>•</span><span>Icosahedron</span><span>•</span>
-        <span>Truncated Icosahedron</span><span>•</span><span>Rhombic Triacontahedron</span><span>•</span>
-        <span>Great Dodecahedron</span><span>•</span><span>Pentagonal Cupola</span><span>•</span>
-        <span>Cuboctahedron</span><span>•</span><span>Small Stellated Dodecahedron</span><span>•</span>
-        <span>Chamfered Dodecahedron</span><span>•</span><span>Octahedron</span><span>•</span>
-        <span>Tetrahedron</span><span>•</span><span>Icosahedron</span><span>•</span>
-        <span>Truncated Icosahedron</span><span>•</span><span>Rhombic Triacontahedron</span><span>•</span>
-        <span>Great Dodecahedron</span><span>•</span><span>Pentagonal Cupola</span><span>•</span>
-        <span>Cuboctahedron</span><span>•</span><span>Small Stellated Dodecahedron</span><span>•</span>
-        <span>Chamfered Dodecahedron</span><span>•</span><span>Octahedron</span><span>•</span>
-      </div>
-    </div>
-  
-    <!-- Solids / catalog --------------------------------------------------->
-    <section class="section" id="solids">
-      <div class="section-head reveal">
-        <p class="kicker">Catalog</p>
-        <h2>47 solids · 6 families</h2>
-        <p class="lede">dual · ambo · truncate · kis · chamfer — Conway operators derive every solid from the Platonic
-  seeds.</p>
-      </div>
-
-      <div class="solids-layout">
-        <div class="solids-stage">
-          <canvas id="catalog-scene" class="catalog-scene" data-scene="catalog" aria-hidden="true"></canvas>
-          <div class="stage-ring" aria-hidden="true"></div>
-          <div class="stage-readout glass">
-            <span class="readout-name" id="readout-name">Icosahedron</span>
-            <span class="readout-meta" id="readout-meta">20 faces · 30 edges · 12 vertices</span>
-          </div>
-        </div>
-
-        <div class="family-list reveal">
-          <button class="family glass" data-solid="icosahedron" data-family="Platonic" data-count="5" data-info="20 
-  faces · 30 edges · 12 vertices" style="--fam:#4bb3a6">
-            <span class="family-dot"></span>
-            <span class="family-text"><b>Platonic</b><i>regular, congruent faces</i></span>
-            <span class="family-n">5</span>
-          </button>
-          <button class="family glass" data-solid="truncatedIcosahedron" data-family="Archimedean" data-count="11" 
-  data-info="32 faces · 90 edges · 60 vertices" style="--fam:#6478c4">
-            <span class="family-dot"></span>
-            <span class="family-text"><b>Archimedean</b><i>truncate · ambo</i></span>
-            <span class="family-n">11</span>
-          </button>
-          <button class="family glass" data-solid="dodecahedron" data-family="Catalan" data-count="11" data-info="duals 
-  of the Archimedeans" style="--fam:#8f74c2">
-            <span class="family-dot"></span>
-            <span class="family-text"><b>Catalan</b><i>dual(Archimedean)</i></span>
-            <span class="family-n">11</span>
-          </button>
-          <button class="family glass" data-solid="octahedron" data-family="Kepler–Poinsot" data-count="4" 
-  data-info="regular star polyhedra" style="--fam:#c071a0">
-            <span class="family-dot"></span>
-            <span class="family-text"><b>Kepler–Poinsot</b><i>star polyhedra · kis</i></span>
-            <span class="family-n">4</span>
-          </button>
-          <button class="family glass" data-solid="cube" data-family="Goldberg" data-count="3" data-info="chamfer · 
-  GP(m,n)" style="--fam:#c9a85e">
-            <span class="family-dot"></span>
-            <span class="family-text"><b>Goldberg</b><i>chamfer · GP(m,n)</i></span>
-            <span class="family-n">3</span>
-          </button>
-          <button class="family glass" data-solid="tetrahedron" data-family="Johnson" data-count="13" 
-  data-info="pyramids · cupolas · bipyramids" style="--fam:#74c79e">
-            <span class="family-dot"></span>
-            <span class="family-text"><b>Johnson</b><i>regular faces, non-uniform</i></span>
-            <span class="family-n">13</span>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Functions (effects) ------------------------------------------------>
-    <section class="section" id="effects">
-      <div class="section-head reveal">
-        <p class="kicker">Functions</p>
-        <h2>spin · spread · explode · aura · trail · group</h2>
-      </div>
-
-      <div class="cards">
-        <article class="card glass tilt reveal">
-          <div class="card-demo"><canvas data-scene="card" data-solid="cube" data-effect="spin" 
-  aria-hidden="true"></canvas></div>
-          <div class="card-body">
-            <h3><span class="card-ico" style="--c:#c06a6a">↻</span> Spin</h3>
-            <p>Per-object and group rotation about the centroid.</p>
-          </div>
-        </article>
-
-        <article class="card glass tilt reveal">
-          <div class="card-demo"><canvas data-scene="card" data-solid="icosahedron" data-effect="rainbow" 
-  aria-hidden="true"></canvas></div>
-          <div class="card-body">
-            <h3><span class="card-ico" style="--c:#6478c4">◑</span> Color spread</h3>
-            <p>HSV gradient by index · golden-angle rainbow.</p>
-          </div>
-        </article>
-
-        <article class="card glass tilt reveal">
-          <div class="card-demo"><canvas data-scene="card" data-solid="octahedron" data-effect="explode" 
-  aria-hidden="true"></canvas></div>
-          <div class="card-body">
-            <h3><span class="card-ico" style="--c:#c9a85e">✺</span> Explode</h3>
-            <p>Faces translated along their normals.</p>
-          </div>
-        </article>
-  
-        <article class="card glass tilt reveal feature-aura">
-          <div class="card-demo"><canvas data-scene="card" data-solid="tetrahedron" data-effect="aura" 
-  aria-hidden="true"></canvas></div>
-          <div class="card-body">
-            <h3><span class="card-ico" style="--c:#4bb3a6">◎</span> Aura</h3>
-            <p>Concentric wireframe shells (OBB), counter-rotating.</p>
-          </div>
-        </article>
-
-        <article class="card glass tilt reveal">
-          <div class="card-demo"><canvas data-scene="card" data-solid="dodecahedron" data-effect="trail" 
-  aria-hidden="true"></canvas></div>
-          <div class="card-body">
-            <h3><span class="card-ico" style="--c:#8f74c2">✧</span> Trail</h3>
-            <p>Particle streak of the position history.</p>
-          </div>
-        </article>
-  
-        <article class="card glass tilt reveal">
-          <div class="card-demo"><canvas data-scene="card" data-effect="groups" aria-hidden="true"></canvas></div>
-          <div class="card-body">
-            <h3><span class="card-ico" style="--c:#74c79e">▦</span> Group</h3>
-            <p>Independent layers, each with its own state.</p>
-          </div>
-        </article>
-      </div>
-    </section>
-  
-    <!-- Trails (cinematic band) -------------------------------------------->
-    <section class="cine cine-band" id="trails">
-      <canvas class="cine-canvas" data-scene="trails" aria-hidden="true"></canvas>
-      <div class="cine-fx cine-fx-2" aria-hidden="true"></div>
-      <div class="cine-inner">
-        <p class="kicker reveal">Trails</p>
-        <h2 class="reveal">Position <span class="grad-text">history.</span></h2>
-        <p class="lede center reveal">
-          Particle systems trace each object as it travels — tapering with age,
-          cycling the hue.
-        </p>
-      </div>
-    </section>
-
-    <!-- Controls ----------------------------------------------------------->
-    <section class="section section-split" id="interface">
-      <div class="split-copy reveal">
-        <p class="kicker">Controls</p>
-        <h2>orbit · pinch · drag</h2>
-        <ul class="checklist">
-          <li><span>✓</span> Orbit, pinch-zoom, hold-to-move</li>
-          <li><span>✓</span> Stackable effect panels</li>
-          <li><span>✓</span> Clean view — hide all chrome</li>
-          <li><span>✓</span> Save / load · 50-step undo</li>
-        </ul>
-      </div>
-
-      <div class="split-visual reveal">
-        <div class="device glass">
-          <div class="device-canvas">
-            <canvas data-scene="card" data-solid="icosahedron" data-effect="aura" aria-hidden="true"></canvas>
-          </div>
-          <div class="tool-strip glass">
-            <span class="tool" style="--c:#8f74c2">◆</span>
-            <span class="tool" style="--c:#c06a6a">↻</span>
-            <span class="tool" style="--c:#6478c4">◑</span>
-            <span class="tool" style="--c:#c9a85e">✺</span>
-            <span class="tool active" style="--c:#4bb3a6">◎</span>
-            <span class="tool" style="--c:#8f74c2">✧</span>
-            <span class="tool" style="--c:#74c79e">▦</span>
-          </div>
-          <div class="float-panel glass">
-            <header style="--c:#4bb3a6">Aura</header>
-            <div class="row"><label>Layers</label><div class="track"><i style="width:62%"></i></div></div>
-            <div class="row"><label>Spacing</label><div class="track"><i style="width:44%"></i></div></div>
-            <div class="row"><label>Glow</label><div class="track"><i style="width:78%"></i></div></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Capture ------------------------------------------------------------>
-    <section class="section" id="capture">
-      <div class="section-head reveal">
-        <p class="kicker">Capture</p>
-        <h2>PNG · H.264</h2>
-      </div>
-      <div class="capture-grid">
-        <article class="cap glass big reveal">
-          <div class="cap-view">
-            <canvas data-scene="card" data-solid="dodecahedron" data-effect="rainbow" aria-hidden="true"></canvas>
-            <div class="viewfinder"><span></span><span></span><span></span><span></span><em class="rec">● REC</em></div>
-          </div>
-          <div class="cap-text">
-            <h3>Still · video</h3>
-            <p>Off-screen high-resolution PNG; H.264 at 30 fps.</p>
-          </div>
-        </article>
-        <article class="cap glass reveal">
-          <h3>SD · HD · Ultra</h3>
-          <p>1× → 4× MSAA → 1.5× supersample.</p>
-        </article>
-        <article class="cap glass reveal">
-          <h3>Lighting</h3>
-          <p>Key azimuth · elevation · fill · ambient.</p>
-        </article>
-      </div>
-    </section>
-  
-    <!-- CTA ---------------------------------------------------------------->
-    <section class="section cta" id="get">
-      <div class="cta-card glass reveal">
-        <canvas data-scene="card" data-solid="icosahedron" data-effect="aura" class="cta-bg" 
-  aria-hidden="true"></canvas>
-        <div class="cta-inner">
-          <h2 class="grad-text">Athena</h2>
-          <p>A 3D rendering tool for geometric solids.</p>
-          <div class="hero-cta">
-            <a href="#showcase" class="btn btn-accent btn-lg">Showcase</a>
-            <a href="#top" class="btn btn-ghost btn-lg">Top ↑</a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="footer">
-    <div class="footer-inner">
-      <a class="brand" href="#top">
-        <canvas class="brand-mark" data-scene="brand" width="36" height="36" aria-hidden="true"></canvas>
-        <span class="brand-name">Athena</span>
-      </a>
-      <p class="footer-tag">A 3D rendering tool for geometric solids · SwiftUI + SceneKit.</p>
-      <p class="footer-fine">Platonic · Archimedean · Catalan · Kepler–Poinsot · Goldberg · Johnson.</p>
-    </div>
-  </footer>
-
-  <script>
-  /* ============================================================================
-     Athena — marketing site engine
-     A tiny dependency-free polyhedra renderer (canvas 2D) + page choreography.
-     Mirrors the app: lit color-spread faces, concentric wireframe "OBB" auras
-     (now counter-rotating, mixed-shape cages), glowing ribbon trails, group
-     clusters, particle fields, and motion-graphics backgrounds.
-     ========================================================================== */
-  'use strict';
-
-  const PHI = (1 + Math.sqrt(5)) / 2;
-  const IPHI = 1 / PHI;
-  const TAU = Math.PI * 2;
-  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* ---------------------------------------------------------------------------
-     Geometry — vertices + face index-loops for the five Platonic solids.
-  --------------------------------------------------------------------------- */
-  const GEO = {
-    tetrahedron: {
-      verts: [[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]],
-      faces: [[0,1,2],[0,3,1],[0,2,3],[1,3,2]],
-    },
-    cube: {
-      verts: [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]],
-      faces: [[0,1,2,3],[4,7,6,5],[0,3,7,4],[1,5,6,2],[0,4,5,1],[3,2,6,7]],
-    },
-    octahedron: {
-      verts: [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]],
-      faces: [[0,2,4],[2,1,4],[1,3,4],[3,0,4],[0,5,2],[2,5,1],[1,5,3],[3,5,0]],
-    },
-    icosahedron: {
-      verts: [
-        [-1,PHI,0],[1,PHI,0],[-1,-PHI,0],[1,-PHI,0],
-        [0,-1,PHI],[0,1,PHI],[0,-1,-PHI],[0,1,-PHI],
-        [PHI,0,-1],[PHI,0,1],[-PHI,0,-1],[-PHI,0,1],
-      ],
-      faces: [
-        [0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],
-        [1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],
-        [3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],
-        [4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1],
-      ],
-    },
-    dodecahedron: {
-      verts: [
-        [1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],
-        [-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1],
-        [0,IPHI,PHI],[0,IPHI,-PHI],[0,-IPHI,PHI],[0,-IPHI,-PHI],
-        [IPHI,PHI,0],[IPHI,-PHI,0],[-IPHI,PHI,0],[-IPHI,-PHI,0],
-        [PHI,0,IPHI],[PHI,0,-IPHI],[-PHI,0,IPHI],[-PHI,0,-IPHI],
-      ],
-      faces: [
-        [0,8,10,2,16],[0,16,17,1,12],[0,12,14,4,8],[1,17,3,11,9],
-        [1,9,5,14,12],[2,10,6,15,13],[2,13,3,17,16],[3,13,15,7,11],
-        [4,14,5,19,18],[4,18,6,10,8],[5,9,11,7,19],[6,18,19,7,15],
-      ],
-    },
-  };
-  GEO.truncatedIcosahedron = GEO.icosahedron;
-
-  // normalize to unit circumradius + precompute unique edges
-  for (const k in GEO) {
-    const g = GEO[k];
-    if (g.__ready) continue;
-    let max = 0;
-    for (const v of g.verts) max = Math.max(max, Math.hypot(v[0], v[1], v[2]));
-    g.verts = g.verts.map(v => [v[0]/max, v[1]/max, v[2]/max]);
-    const seen = new Set(), edges = [];
-    for (const f of g.faces) {
-      for (let i = 0; i < f.length; i++) {
-        const a = f[i], b = f[(i+1)%f.length];
-        const key = a < b ? a+'_'+b : b+'_'+a;
-        if (!seen.has(key)) { seen.add(key); edges.push([a,b]); }
-      }
-    }
-    g.edges = edges;
-    g.__ready = true;
-  }
-
-  /* ---------------------------------------------------------------------------
-     Math helpers
-  --------------------------------------------------------------------------- */
-  function rot(v, yaw, pitch) {
-    const cy = Math.cos(yaw), sy = Math.sin(yaw);
-    const x = v[0]*cy + v[2]*sy;
-    const z = -v[0]*sy + v[2]*cy;
-    const y = v[1];
-    const cx = Math.cos(pitch), sx = Math.sin(pitch);
-    return [x, y*cx - z*sx, y*sx + z*cx];
-  }
-  function hsl(h, s, l, a) {
-    h = ((h % 360) + 360) % 360;
-    return `hsla(${h.toFixed(0)},${(s*100).toFixed(0)}%,${(l*100).toFixed(0)}%,${a==null?1:a})`;
-  }
-  const clamp = (n, a, b) => n < a ? a : n > b ? b : n;
-  const lerp = (a, b, t) => a + (b - a) * t;
-  
-  /* ---------------------------------------------------------------------------
-     Body — one polyhedron instance in a scene
-  --------------------------------------------------------------------------- */
-  class Body {
-    constructor(cfg) {
-      this.type = cfg.type || 'icosahedron';
-      this.geo = GEO[this.type] || GEO.icosahedron;
-      this.pos = cfg.pos || [0, 0, 0];
-      this.radius = cfg.radius != null ? cfg.radius : 1;
-      this.spin = cfg.spin || [0.18, 0.32];
-      this.yaw = cfg.yaw || 0;
-      this.pitch = cfg.pitch || 0.3;
-      this.colorMode = cfg.colorMode || 'spread';
-      this.h0 = cfg.h0 != null ? cfg.h0 : 168;
-      this.h1 = cfg.h1 != null ? cfg.h1 : 280;
-      this.hue = cfg.hue != null ? cfg.hue : 200;
-      this.wire = !!cfg.wire;
-      // auras (OBB cages)
-      this.aura = cfg.aura || 0;
-      this.auraType = cfg.auraType || this.type;
-      this.auraTypes = cfg.auraTypes || null;     // mix shapes per shell
-      this.auraSpin = cfg.auraSpin || 0;          // independent counter-rotation
-      this.auraScale = cfg.auraScale || 0.26;     // gap between shells
-      // trails
-      this.trail = !!cfg.trail;
-      this.trailWidth = cfg.trailWidth != null ? cfg.trailWidth : 2.2;
-      this.trailLife = cfg.trailLife || 1.0;      // bigger = longer streak
-      this.trailLen = cfg.trailLen || 64;
-      // misc
-      this.opacity = cfg.opacity != null ? cfg.opacity : 1;
-      this.orbit = cfg.orbit || null;
-      this.pulseAmt = cfg.pulseAmt || 0;
-      this.pulsePhase = cfg.pulsePhase || 0;
-      this.particles = [];
-      this._morph = 1;
-      this._lastHue = this.hue;
-    }
-    setType(t) { if (GEO[t]) { this.type = t; this.geo = GEO[t]; this.auraType = t; } }
-    update(dt, t) {
-      if (!REDUCED) { this.yaw += this.spin[0]*dt; this.pitch += this.spin[1]*dt; }
-      if (this.orbit) {
-        if (!REDUCED) this.orbit.a += (this.orbit.speed||0.4)*dt;
-        const r = this.orbit.r, ti = this.orbit.tilt||0;
-        this.pos = [Math.cos(this.orbit.a)*r, Math.sin(this.orbit.a)*r*Math.sin(ti),
-  Math.sin(this.orbit.a)*r*Math.cos(ti)];
-      }
-      if (this.trail) {
-        this.particles.push({ x:this.pos[0], y:this.pos[1], z:this.pos[2], life:1, hue:this._lastHue });
-        if (this.particles.length > this.trailLen) this.particles.shift();
-        const decay = dt * (0.55 / this.trailLife);
-        for (const p of this.particles) p.life -= decay;
-        while (this.particles.length && this.particles[0].life <= 0) this.particles.shift();
-      }
-    }
-    faceColor(i, n, t) {
-      let h;
-      if (this.colorMode === 'rainbow') h = (i*137.50776 + (REDUCED?0:t*40));
-      else if (this.colorMode === 'mono') h = this.hue;
-      else { const k = n > 1 ? i/(n-1) : 0; h = lerp(this.h0, this.h1, k); }
-      this._lastHue = h;
-      return h;
-    }
-  }
-  
-  /* ---------------------------------------------------------------------------
-     Scene — owns a canvas, a camera, a particle field, and a list of Bodies
-  --------------------------------------------------------------------------- */
-  class Scene {
-    constructor(canvas, cfg) {
-      this.canvas = canvas;
-      this.ctx = canvas.getContext('2d');
-      this.cfg = cfg;
-      this.bodies = cfg.bodies.map(b => new Body(b));
-      this.focal = cfg.focal || 3.2;
-      this.fit = cfg.fit != null ? cfg.fit : 0.34;
-      this.parallax = cfg.parallax || 0;
-      this.px = 0; this.py = 0;
-      this.cpx = 0; this.cpy = 0;
-      this.active = true;
-      this.t = 0;
-      this.glow = cfg.glow != null ? cfg.glow : true;
-      this.field = null;
-      if (cfg.field) {
-        const n = cfg.field.count || 60, hue = cfg.field.hue != null ? cfg.field.hue : 210;
-        this.field = [];
-        for (let i = 0; i < n; i++) {
-          this.field.push({
-            x: (i*0.61803398875 % 1)*2 - 1,
-            y: ((i*0.41421356 + 0.13) % 1)*2 - 1,
-            z: (i*0.2714 % 1),
-            v: 0.05 + (i % 5)*0.03,
-            len: 0.02 + (i % 4)*0.02,
-            hue: hue + ((i*53) % 90) - 45,
-            sz: 0.5 + (i % 3)*0.6,
-          });
-        }
-        const d = cfg.field.dir || [0.6, -0.25];
-        const dl = Math.hypot(d[0], d[1]) || 1;
-        this.fieldDir = [d[0]/dl, d[1]/dl];
-      }
-      this.resize();
-    }
-    resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-      const r = this.canvas.getBoundingClientRect();
-      const w = Math.max(1, r.width), h = Math.max(1, r.height);
-      this.canvas.width = Math.round(w*dpr);
-      this.canvas.height = Math.round(h*dpr);
-      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      this.w = w; this.h = h;
-    }
-    project(p, cx, cy, scale) {
-      const persp = this.focal / (this.focal - p[2]);
-      return [cx + p[0]*persp*scale, cy - p[1]*persp*scale, p[2]];
-    }
-    update(dt) {
-      this.t += dt;
-      this.cpx += (this.px - this.cpx) * Math.min(1, dt*5);
-      this.cpy += (this.py - this.cpy) * Math.min(1, dt*5);
-      if (this.field && !REDUCED) {
-        const [ux, uy] = this.fieldDir;
-        for (const p of this.field) {
-          p.x += ux*p.v*dt; p.y += uy*p.v*dt;
-          if (p.x > 1.15) p.x = -1.15; else if (p.x < -1.15) p.x = 1.15;
-          if (p.y > 1.15) p.y = -1.15; else if (p.y < -1.15) p.y = 1.15;
-        }
-      }
-      for (const b of this.bodies) b.update(dt, this.t);
-    }
-    renderField(ctx, w, h) {
-      if (!this.field) return;
-      const [ux, uy] = this.fieldDir;
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.lineCap = 'round';
-      for (const p of this.field) {
-        const persp = 0.55 + p.z*0.9;
-        const sx = w/2 + p.x*w*0.56*persp + this.cpx*this.parallax*34*persp;
-        const sy = h/2 + p.y*h*0.56*persp + this.cpy*this.parallax*34*persp;
-        const len = p.len * Math.min(w, h) * persp;
-        ctx.strokeStyle = hsl(p.hue, 0.6, 0.52, 0.07*persp);
-        ctx.lineWidth = p.sz*persp;
-        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx - ux*len, sy - uy*len); ctx.stroke();
-      }
-      ctx.restore();
-    }
-    render() {
-      const ctx = this.ctx, w = this.w, h = this.h;
-      ctx.clearRect(0, 0, w, h);
-      this.renderField(ctx, w, h);
-      const scale = Math.min(w, h) * this.fit;
-      const vyaw = this.cpx * this.parallax, vpitch = this.cpy * this.parallax;
-      const cx0 = w/2, cy0 = h/2;
-      const order = this.bodies.map((b,i)=>i).sort((a,b)=>this.bodies[a].pos[2]-this.bodies[b].pos[2]);
-
-      for (const bi of order) {
-        const b = this.bodies[bi];
-        const m = b._morph;
-        if (m <= 0.001) continue;
-        const center = this.project(b.pos, cx0, cy0, scale);
-        const cx = center[0], cy = center[1];
-        const pulse = b.pulseAmt ? (1 + Math.sin(this.t*0.8 + b.pulsePhase) * b.pulseAmt) : 1;
-        const rad = b.radius * m * pulse;
-
-        // glowing ribbon trails (drawn under the body)
-        if (b.trail && b.particles.length > 1) {
-          const sp = b.particles.map(p => {
-            const q = this.project([p.x, p.y, p.z], cx0, cy0, scale);
-            return [q[0], q[1], p.life, p.hue];
-          });
-          ctx.save();
-          ctx.globalCompositeOperation = 'lighter';
-          ctx.lineCap = 'round';
-          // Additive layering reads as glow — no expensive shadowBlur.
-          // pass 0 = wide soft halo, 1 = narrow core. Darker/dimmer palette.
-          for (let pass = 0; pass < 2; pass++) {
-            for (let i = 1; i < sp.length; i++) {
-              const a = sp[i-1], c = sp[i];
-              const tt = i / sp.length;                 // 0 tail .. 1 head
-              ctx.lineWidth = Math.max(0.5, (pass === 0 ? b.trailWidth * 3.0 : b.trailWidth) * tt);
-              const al = (pass === 0 ? 0.09 : 0.46) * clamp(c[2], 0, 1);
-              ctx.strokeStyle = hsl(c[3], 0.8, pass === 0 ? 0.4 : 0.56, al);
-              ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]); ctx.stroke();
-            }
-          }
-          ctx.restore();
-        }
-  
-        // complex OBB — counter-rotating, mixed-shape concentric wireframe cages
-        if (b.aura > 0) {
-          ctx.save();
-          ctx.globalCompositeOperation = 'lighter';
-          for (let s = 1; s <= b.aura; s++) {
-            const ag = GEO[(b.auraTypes && b.auraTypes[(s-1) % b.auraTypes.length]) || b.auraType] || b.geo;
-            const sc = 1 + s*b.auraScale;
-            const fade = (1 - (s-1)/Math.max(1, b.aura)) * 0.4 + 0.1;
-            const dir = (s % 2 === 0) ? 1 : -1;
-            const extra = dir * this.t * b.auraSpin;
-            const arv = ag.verts.map(v => rot(v, b.yaw + vyaw + extra, b.pitch + vpitch + extra*0.5));
-            ctx.lineWidth = clamp(1.4 - s*0.12, 0.5, 1.4);
-            const hue = b.colorMode === 'mono' ? b.hue + s*14 : lerp(b.h0, b.h1, (s-1)/Math.max(1, b.aura));
-            ctx.strokeStyle = hsl(hue, 0.72, 0.5, fade);   // additive 'lighter' gives the glow, no shadowBlur
-            ctx.beginPath();
-            for (const e of ag.edges) {
-              const a = this.project([arv[e[0]][0]*rad*sc, arv[e[0]][1]*rad*sc, arv[e[0]][2]*rad*sc], cx, cy, scale);
-              const z = this.project([arv[e[1]][0]*rad*sc, arv[e[1]][1]*rad*sc, arv[e[1]][2]*rad*sc], cx, cy, scale);
-              ctx.moveTo(a[0], a[1]); ctx.lineTo(z[0], z[1]);
-            }
-            ctx.stroke();
-          }
-          ctx.restore();
-        }
-
-        // faces — explode + paint sorted far-to-near
-        const rv = b.geo.verts.map(v => rot(v, b.yaw + vyaw, b.pitch + vpitch));
-        const faces = b.geo.faces;
-        const drawList = [];
-        for (let fi = 0; fi < faces.length; fi++) {
-          const f = faces[fi];
-          let cxn=0, cyn=0, czn=0;
-          for (const idx of f) { cxn+=rv[idx][0]; cyn+=rv[idx][1]; czn+=rv[idx][2]; }
-          cxn/=f.length; cyn/=f.length; czn/=f.length;
-          const e1 = [rv[f[1]][0]-rv[f[0]][0], rv[f[1]][1]-rv[f[0]][1], rv[f[1]][2]-rv[f[0]][2]];
-          const e2 = [rv[f[2]][0]-rv[f[0]][0], rv[f[2]][1]-rv[f[0]][1], rv[f[2]][2]-rv[f[0]][2]];
-          let nx = e1[1]*e2[2]-e1[2]*e2[1], ny = e1[2]*e2[0]-e1[0]*e2[2], nz = e1[0]*e2[1]-e1[1]*e2[0];
-          const nl = Math.hypot(nx,ny,nz) || 1; nz/=nl;
-          if (nz < 0) nz = -nz;
-          const ex = (b.explode||0) * 1.1;
-          const offx = cxn*ex, offy = cyn*ex, offz = czn*ex;
-          const pts = f.map(idx => this.project([
-            (rv[idx][0]+offx)*rad, (rv[idx][1]+offy)*rad, (rv[idx][2]+offz)*rad
-          ], cx, cy, scale));
-          const depth = czn + offz;
-          const light = clamp(0.42 + 0.58*nz, 0, 1);
-          const hue = b.faceColor(fi, faces.length, this.t);
-          drawList.push({ pts, depth, light, hue });
-        }
-        drawList.sort((a,b)=>a.depth-b.depth);
-
-        ctx.save();
-        ctx.globalAlpha = b.opacity;
-        for (const d of drawList) {
-          ctx.beginPath();
-          ctx.moveTo(d.pts[0][0], d.pts[0][1]);
-          for (let i = 1; i < d.pts.length; i++) ctx.lineTo(d.pts[i][0], d.pts[i][1]);
-          ctx.closePath();
-          if (b.wire) {
-            ctx.lineWidth = 1.1;
-            ctx.strokeStyle = hsl(d.hue, 0.68, 0.36 + d.light*0.24, 0.82);
-            ctx.stroke();
-          } else {
-            const grad = ctx.createLinearGradient(d.pts[0][0], d.pts[0][1], d.pts[d.pts.length-1][0],
-  d.pts[d.pts.length-1][1]);
-            grad.addColorStop(0, hsl(d.hue, 0.6, 0.17 + d.light*0.32));
-            grad.addColorStop(1, hsl(d.hue+10, 0.64, 0.11 + d.light*0.28));
-            ctx.fillStyle = grad;
-            ctx.fill();
-            ctx.lineWidth = 0.8;
-            ctx.strokeStyle = hsl(d.hue, 0.5, 0.5, 0.12 + d.light*0.16);
-            ctx.stroke();
-          }
-        }
-        ctx.restore();
-      }
-    }
-  }
-
-  /* ---------------------------------------------------------------------------
-     Satellite helper — a wireframe solid on an orbit with a glowing trail
-  --------------------------------------------------------------------------- */
-  function sat(type, hue, r, a, speed, tilt, opts) {
-    return Object.assign({
-      type, hue, wire: true, colorMode: 'mono',
-      radius: (opts && opts.radius) || 0.26,
-      spin: [0.6, 0.5], trail: true, trailLife: 2.4, trailWidth: 3.2, trailLen: 88,
-      orbit: { r, a, speed, tilt },
-    }, opts);
-  }
-
-  /* ---------------------------------------------------------------------------
-     Scene factory — read data-* config off a canvas
-  --------------------------------------------------------------------------- */
-  function buildScene(canvas) {
-    const kind = canvas.dataset.scene;
-    if (kind === 'brand') {
-      return new Scene(canvas, {
-        fit: 0.36, focal: 3.4, glow: true,
-        bodies: [{ type:'octahedron', colorMode:'spread', h0:170, h1:285, spin:[0.5,0.7], radius:0.92 }],
-      });
-    }
-    if (kind === 'hero') {
-      return new Scene(canvas, {
-        fit: 0.24, focal: 3.0, parallax: 0.6, glow: true,
-        field: { count: 30, hue: 205, dir:[0.5,-0.3] },
-        bodies: [
-          { type:'icosahedron', colorMode:'spread', h0:160, h1:300, spin:[0.1,0.14], radius:1.05,
-            aura:4, auraTypes:['icosahedron','dodecahedron'], auraSpin:0.22, auraScale:0.27, pulseAmt:0.04 },
-          sat('tetrahedron', 172, 2.55, 0.0, 0.45, 0.5, { radius:0.32 }),
-          sat('cube', 280, 3.1, 2.1, -0.32, 1.1, { radius:0.28 }),
-          sat('octahedron', 325, 2.8, 4.0, 0.55, -0.6, { radius:0.25 }),
-        ],
-      });
-    }
-    if (kind === 'showcase') {
-      return new Scene(canvas, {
-        fit: 0.205, focal: 3.1, parallax: 0.5, glow: true,
-        field: { count: 50, hue: 215, dir:[0.55,-0.22] },
-        bodies: [
-          { type:'icosahedron', colorMode:'spread', h0:158, h1:305, spin:[0.09,0.13], radius:1.05,
-            aura:7, auraTypes:['cube','dodecahedron','icosahedron','octahedron'], auraSpin:0.34, auraScale:0.285,
-  pulseAmt:0.05 },
-          sat('octahedron', 178, 3.1, 0.0, 0.5, 0.5, { radius:0.32, trailWidth:3.6, trailLife:2.7 }),
-          sat('tetrahedron', 285, 3.7, 2.0, -0.36, 1.2, { radius:0.28, trailWidth:3.4, trailLife:2.7 }),
-          sat('cube', 332, 2.7, 4.2, 0.62, -0.7, { radius:0.26, trailWidth:3.2, trailLife:2.5 }),
-          sat('icosahedron', 52, 4.2, 5.5, 0.28, 0.2, { radius:0.23, trailWidth:3.0, trailLife:2.4 }),
-        ],
-      });
-    }
-    if (kind === 'trails') {
-      const def = [
-        ['octahedron', 184, 1.5, 0.0, 0.52, 0.3],
-        ['tetrahedron', 214, 2.1, 1.1, -0.44, 1.0],
-        ['cube', 262, 2.7, 2.2, 0.40, -0.6],
-        ['icosahedron', 304, 3.3, 3.3, -0.34, 0.7],
-        ['dodecahedron', 334, 3.9, 4.4, 0.30, 1.4],
-        ['octahedron', 44, 4.5, 5.5, -0.26, -0.3],
-      ];
-      return new Scene(canvas, {
-        fit: 0.135, focal: 3.5, parallax: 0.3, glow: true,
-        field: { count: 40, hue: 230, dir:[0.7,0.0] },
-        bodies: def.map((d, i) => sat(d[0], d[1], d[2], d[3], d[4], d[5],
-          { radius: 0.22 + (i % 3)*0.05, trailLife: 3.0, trailWidth: 4.4, trailLen: 100, spin:[0.5 + i*0.1, 0.4] })),
-      });
-    }
-    if (kind === 'catalog') {
-      return new Scene(canvas, {
-        fit: 0.30, focal: 3.1, parallax: 0.35, glow: true,
-        bodies: [{ type:'icosahedron', colorMode:'spread', h0:168, h1:285, spin:[0.16,0.22], radius:1.0,
-          aura:3, auraTypes:['icosahedron','dodecahedron'], auraSpin:0.18, auraScale:0.26 }],
-      });
-    }
-    // ----- effect-card scenes -----
-    const solid = canvas.dataset.solid || 'icosahedron';
-    const effect = canvas.dataset.effect || 'spread';
-    if (effect === 'groups') {
-      return new Scene(canvas, {
-        fit: 0.16, focal: 3.2, glow: true,
-        bodies: [
-          { type:'cube', colorMode:'mono', hue:150, spin:[0.4,0.3], radius:0.7, pos:[-1.4,0.7,0] },
-          { type:'octahedron', colorMode:'mono', hue:265, spin:[0.5,0.6], radius:0.7, pos:[1.4,0.6,0.3] },
-          { type:'tetrahedron', colorMode:'mono', hue:330, spin:[0.7,0.4], radius:0.62, pos:[-1.1,-1.0,0.2] },
-          { type:'icosahedron', colorMode:'mono', hue:45, spin:[0.3,0.5], radius:0.72, pos:[1.2,-1.0,0] },
-        ],
-      });
-    }
-    const body = { type: solid, spin:[0.3,0.42], radius:1.0 };
-    if (effect === 'spin')    { body.colorMode='spread'; body.h0=350; body.h1=30; body.spin=[0.55,0.7]; }
-    if (effect === 'rainbow') { body.colorMode='rainbow'; body.spin=[0.16,0.22]; }
-    if (effect === 'explode') { body.colorMode='spread'; body.h0=38; body.h1=58; }
-    if (effect === 'aura')    { body.colorMode='spread'; body.h0=165; body.h1=285; body.aura=5;
-                                body.auraTypes=['cube','icosahedron','dodecahedron']; body.auraSpin=0.3;
-  body.radius=0.7; }
-    if (effect === 'trail')   { body.colorMode='spread'; body.h0=255; body.h1=325; body.trail=true; body.trailLife=2.6;
-  body.trailWidth=3.8; body.trailLen=92;
-                                body.orbit={r:1.05,a:0,speed:1.0,tilt:0.4}; body.radius=0.6; }
-    const sc = new Scene(canvas, { fit:0.30, focal:3.2, glow:true, bodies:[body] });
-    if (effect === 'explode') sc._explodePulse = true;
-    return sc;
-  }
-
-  /* ---------------------------------------------------------------------------
-     Scene manager — single RAF, visibility gating
-  --------------------------------------------------------------------------- */
-  const scenes = [];
-  let lastT = performance.now();
-
-  function tick(now) {
-    const dt = Math.min(0.05, (now - lastT) / 1000);
-    lastT = now;
-    for (const s of scenes) {
-      if (!s.active) continue;
-      if (s._explodePulse) s.bodies[0].explode = (Math.sin(s.t*0.9) * 0.5 + 0.5) * 0.9;
-      s.update(dt);
-      s.render();
-    }
-    requestAnimationFrame(tick);
-  }
-
-  function initScenes() {
-    document.querySelectorAll('canvas[data-scene]').forEach(c => {
-      try {
-        const s = buildScene(c);
-        s.el = c;
-        scenes.push(s);
-      } catch (e) { /* ignore a single bad canvas */ }
-    });
-    const io = new IntersectionObserver((entries) => {
-      for (const en of entries) {
-        const s = scenes.find(x => x.el === en.target);
-        if (s) s.active = en.isIntersecting;
-      }
-    }, { rootMargin: '140px' });
-    scenes.forEach(s => io.observe(s.el));
-    let rt;
-    window.addEventListener('resize', () => {
-      clearTimeout(rt);
-      rt = setTimeout(() => scenes.forEach(s => s.resize()), 150);
-    });
-    requestAnimationFrame(tick);
-  }
-
-  /* ---------------------------------------------------------------------------
-     Catalog interaction — swap the centerpiece solid
-  --------------------------------------------------------------------------- */
-  function initCatalog() {
-    const families = document.querySelectorAll('.family');
-    const catScene = scenes.find(s => s.el && s.el.dataset.scene === 'catalog');
-    const nameEl = document.getElementById('readout-name');
-    const metaEl = document.getElementById('readout-meta');
-    if (!families.length || !catScene) return;
-    families[0].classList.add('on');
-    families.forEach(btn => {
-      btn.addEventListener('click', () => {
-        families.forEach(f => f.classList.remove('on'));
-        btn.classList.add('on');
-        const type = btn.dataset.solid;
-        const body = catScene.bodies[0];
-        animateMorph(body, type, () => {
-          if (nameEl) nameEl.textContent = btn.querySelector('b').textContent + ' family';
-          if (metaEl) metaEl.textContent = btn.dataset.info;
-        });
-        const c = getComputedStyle(btn).getPropertyValue('--fam').trim();
-        const stage = document.querySelector('.solids-stage');
-        if (stage && c) stage.style.setProperty('--stage-accent', c);
-      });
-    });
-  }
-  
-  function animateMorph(body, type, onSwap) {
-    const start = performance.now();
-    const dur = 520;
-    let swapped = false;
-    function step(now) {
-      const p = Math.min(1, (now - start) / dur);
-      if (p < 0.5) body._morph = 1 - p*2*0.85;
-      else {
-        if (!swapped) { body.setType(type); swapped = true; onSwap && onSwap(); }
-        body._morph = 0.15 + (p-0.5)*2*0.85;
-      }
-      if (p < 1) requestAnimationFrame(step);
-      else body._morph = 1;
-    }
-    requestAnimationFrame(step);
-  }
-  
-  /* ---------------------------------------------------------------------------
-     Pointer parallax → parallaxed scenes + cursor light
-  --------------------------------------------------------------------------- */
-  function initPointer() {
-    const light = document.getElementById('cursor-light');
-    window.addEventListener('pointermove', (e) => {
-      const nx = (e.clientX / window.innerWidth) * 2 - 1;
-      const ny = (e.clientY / window.innerHeight) * 2 - 1;
-      for (const s of scenes) {
-        if (s.parallax) { s.px = nx; s.py = ny; }
-      }
-      if (light) { light.style.setProperty('--mx', e.clientX + 'px'); light.style.setProperty('--my', e.clientY + 'px');
-  }
-    }, { passive: true });
-  }
-  
-  /* ---------------------------------------------------------------------------
-     Motion-graphics background — drifting wireframe megastructures + streak field
-  --------------------------------------------------------------------------- */
-  function initBackground() {
-    const c = document.getElementById('bg');
-    if (!c) return;
-    const ctx = c.getContext('2d');
-    function size() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-      c.width = Math.round(innerWidth*dpr); c.height = Math.round(innerHeight*dpr);
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-    }
-    size();
-    window.addEventListener('resize', () => { clearTimeout(c._rt); c._rt = setTimeout(size, 150); });
-
-    const rnd = () => Math.random();
-    const types = ['tetrahedron','cube','octahedron','icosahedron','dodecahedron'];
-    // big slow nested wireframe structures (complex-OBB feel)
-    const SN = innerWidth < 720 ? 3 : 5;
-    const structs = [];
-    for (let i = 0; i < SN; i++) structs.push({
-      geo: GEO[types[i % types.length]],
-      cage: GEO[types[(i + 2) % types.length]],
-      x: rnd(), y: rnd(),
-      r: 60 + rnd()*120,
-      yaw: rnd()*6, pitch: rnd()*6,
-      sy: 0.05 + rnd()*0.05, sp: 0.04 + rnd()*0.05,
-      drift: 4 + rnd()*8,
-      hue: (i*137.5) % 360,
-      depth: 0.22 + (i % 3)*0.16,
-    });
-    // streak field (motion lines)
-    const MN = innerWidth < 720 ? 38 : 78;
-    const ang = -0.5;                       // travel direction
-    const ux = Math.cos(ang), uy = Math.sin(ang);
-    const streaks = [];
-    for (let i = 0; i < MN; i++) streaks.push({
-      x: rnd()*innerWidth, y: rnd()*innerHeight,
-      v: 26 + rnd()*90, len: 14 + rnd()*54,
-      hue: 195 + rnd()*120, w: 0.5 + rnd()*1.1, a: 0.03 + rnd()*0.05,
-    });
-
-    let bt = performance.now();
-    function frame(now) {
-      const dt = Math.min(0.05, (now - bt)/1000); bt = now;
-      ctx.clearRect(0, 0, innerWidth, innerHeight);
-      ctx.globalCompositeOperation = 'lighter';
-
-      // streaks
-      ctx.lineCap = 'round';
-      for (const p of streaks) {
-        if (!REDUCED) { p.x += ux*p.v*dt; p.y += uy*p.v*dt; }
-        if (p.x < -60) p.x = innerWidth + 60; else if (p.x > innerWidth + 60) p.x = -60;
-        if (p.y < -60) p.y = innerHeight + 60; else if (p.y > innerHeight + 60) p.y = -60;
-        ctx.strokeStyle = hsl(p.hue, 0.75, 0.7, p.a);
-        ctx.lineWidth = p.w;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - ux*p.len, p.y - uy*p.len); ctx.stroke();
-      }
-
-      // big nested wireframe structures
-      for (const it of structs) {
-        if (!REDUCED) { it.yaw += it.sy*dt; it.pitch += it.sp*dt; it.y -= (it.drift/innerHeight)*dt; if (it.y < -0.15)
-  it.y = 1.15; }
-        const cx = it.x*innerWidth, cy = it.y*innerHeight;
-        for (let layer = 0; layer < 2; layer++) {
-          const g = layer === 0 ? it.geo : it.cage;
-          const ss = layer === 0 ? 1 : 1.5;
-          const sgn = layer === 0 ? 1 : -1;
-          const rv = g.verts.map(v => rot(v, it.yaw*sgn, it.pitch*sgn));
-          ctx.lineWidth = 1;
-          ctx.strokeStyle = hsl(it.hue + layer*30, 0.55, 0.62, (layer === 0 ? 0.12 : 0.07) * it.depth);
-          ctx.beginPath();
-          for (const e of g.edges) {
-            const a = rv[e[0]], b = rv[e[1]];
-            const pa = 3.6/(3.6 - a[2]), pb = 3.6/(3.6 - b[2]);
-            ctx.moveTo(cx + a[0]*pa*it.r*ss, cy - a[1]*pa*it.r*ss);
-            ctx.lineTo(cx + b[0]*pb*it.r*ss, cy - b[1]*pb*it.r*ss);
-          }
-          ctx.stroke();
-        }
-      }
-      ctx.globalCompositeOperation = 'source-over';
-      requestAnimationFrame(frame);
-    }
-    if (REDUCED) frame(bt); else requestAnimationFrame(frame);
-  }
-  
-  /* ---------------------------------------------------------------------------
-     Scroll reveals, tilt cards, stat count-up, nav
-  --------------------------------------------------------------------------- */
-  function initReveals() {
-    const els = Array.from(document.querySelectorAll('.reveal'));
-    const show = el => el.classList.add('in');
-    const vh = window.innerHeight;
-    els.forEach(el => { if (el.getBoundingClientRect().top < vh * 0.92) show(el); });
-    if (!('IntersectionObserver' in window)) { els.forEach(show); return; }
-    const io = new IntersectionObserver((entries) => {
-      for (const en of entries) {
-        if (en.isIntersecting) { show(en.target); io.unobserve(en.target); }
-      }
-    }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
-    els.forEach(el => { if (!el.classList.contains('in')) io.observe(el); });
-    setTimeout(() => els.forEach(show), 2200);
-  }
-
-  function initTilt() {
-    if (window.matchMedia('(hover:none)').matches) return;
-    document.querySelectorAll('.tilt').forEach(card => {
-      card.addEventListener('pointermove', (e) => {
-        const r = card.getBoundingClientRect();
-        const px = (e.clientX - r.left)/r.width - 0.5;
-        const py = (e.clientY - r.top)/r.height - 0.5;
-        card.style.setProperty('--rx', (-py*6).toFixed(2) + 'deg');
-        card.style.setProperty('--ry', (px*8).toFixed(2) + 'deg');
-        card.style.setProperty('--gx', (px*100+50) + '%');
-        card.style.setProperty('--gy', (py*100+50) + '%');
-      });
-      card.addEventListener('pointerleave', () => {
-        card.style.setProperty('--rx','0deg'); card.style.setProperty('--ry','0deg');
-      });
-    });
-  }
-  
-  function initCounts() {
-    const io = new IntersectionObserver((entries) => {
-      for (const en of entries) {
-        if (!en.isIntersecting) continue;
-        const el = en.target, target = +el.dataset.count;
-        io.unobserve(el);
-        if (REDUCED || target === 0) { el.textContent = target; continue; }
-        const start = performance.now(), dur = 1100;
-        function step(now) {
-          const p = clamp((now-start)/dur, 0, 1);
-          const eased = 1 - Math.pow(1-p, 3);
-          el.textContent = Math.round(target*eased);
-          if (p < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-      }
-    }, { threshold: 0.6 });
-    document.querySelectorAll('[data-count]').forEach(el => io.observe(el));
-  }
-
-  function initNav() {
-    const nav = document.querySelector('.nav-wrap');
-    if (!nav) return;
-    const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 24);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-  }
-  
-  /* --------------------------------------------------------------------------- */
-  function init() {
-    initScenes();
-    initBackground();
-    initCatalog();
-    initPointer();
-    initReveals();
-    initTilt();
-    initCounts();
-    initNav();
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-
-  </script>
-  </body>
-  </html>
+  3  <head>
+        4  <meta charset="UTF-8" />
+        5  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        6 -<meta name="theme-color" content="#040509" />                                                         
+        7 -<title>Athena — A 3D rendering tool for geometric solids</title>                                      
+        8 -<meta name="description" content="Athena — A 3D rendering tool for geometric solids. Platonic, Archime
+          -dean, Catalan, Kepler–Poinsot, Goldberg and Johnson solids." />                                       
+        9 -<meta property="og:title" content="Athena — A 3D rendering tool for geometric solids" />              
+       10 -<meta property="og:description" content="Platonic · Archimedean · Catalan · Kepler–Poinsot · Goldberg 
+          -· Johnson." />                                                                                        
+        6 +<title>Athena — an algorithmic visualization language</title>                                         
+        7 +<meta name="description" content="Athena is an algorithmic visualization language: polyhedra as primit
+          +ives, operators as grammar, motion as syntax." />                                                     
+        8 +<meta name="theme-color" content="#04060d" />                                                         
+        9 +<meta property="og:title" content="Athena — an algorithmic visualization language" />                 
+       10 +<meta property="og:description" content="Primitives, operators, motion. A grammar for visualizing geom
+          +etry." />                                                                                             
+       11  <meta property="og:type" content="website" />
+       12 -<link rel="stylesheet" href="styles.css" />                                                           
+       12  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+       13 +<link rel="stylesheet" href="styles.css" />                                                           
+       14  </head>
+       15  <body>
+       16  
+       17 -<!-- Ambient layers ------------------------------------------------------->                          
+       18 -<canvas id="bg" class="bg-canvas" aria-hidden="true"></canvas>                                        
+       19 -<div class="aurora" aria-hidden="true">                                                               
+       20 -  <span class="blob blob-a"></span>                                                                   
+       21 -  <span class="blob blob-b"></span>                                                                   
+       22 -  <span class="blob blob-c"></span>                                                                   
+       23 -  <span class="grain"></span>                                                                         
+       24 -</div>                                                                                                
+       17 +<!-- atmosphere -->                                                                                   
+       18 +<canvas id="bg" aria-hidden="true"></canvas>                                                          
+       19  <div id="cursor-light" class="cursor-light" aria-hidden="true"></div>
+       20  
+       27 -<!-- Nav ------------------------------------------------------------------>                          
+       21 +<!-- nav -->                                                                                          
+       22  <header class="nav-wrap">
+       29 -  <nav class="nav glass" aria-label="Primary">                                                        
+       30 -    <a class="brand" href="#top" aria-label="Athena">                                                 
+       31 -      <canvas class="brand-mark" data-scene="brand" width="40" height="40" aria-hidden="true"></canvas
+          ->                                                                                                     
+       32 -      <span class="brand-name">Athena</span>                                                          
+       33 -    </a>                                                                                              
+       34 -    <div class="nav-links">                                                                           
+       35 -      <a href="#showcase">Showcase</a>                                                                
+       36 -      <a href="#solids">Solids</a>                                                                    
+       37 -      <a href="#effects">Functions</a>                                                                
+       38 -      <a href="#trails">Trails</a>                                                                    
+       39 -      <a href="#capture">Capture</a>                                                                  
+       40 -    </div>                                                                                            
+       41 -    <a href="#showcase" class="btn btn-pill btn-accent nav-cta">Showcase</a>                          
+       23 +  <a class="brand" href="#top">                                                                       
+       24 +    <canvas class="brand-mark" data-scene="brand" width="40" height="40" aria-hidden="true"></canvas> 
+       25 +    <span><b>ATHENA</b> <i>· visualization language</i></span>                                        
+       26 +  </a>                                                                                                
+       27 +  <nav class="nav-links">                                                                             
+       28 +    <a href="#primitives">Primitives</a>                                                              
+       29 +    <a href="#operators">Operators</a>                                                                
+       30 +    <a href="#motion">Motion</a>                                                                      
+       31    </nav>
+       32  </header>
+       33  
+       34  <main id="top">
+       35  
+       47 -  <!-- Hero --------------------------------------------------------------->                          
+       48 -  <section class="hero" id="hero">                                                                    
+       49 -    <canvas id="hero-scene" class="hero-scene" data-scene="hero" aria-hidden="true"></canvas>         
+       50 -    <div class="hero-vignette" aria-hidden="true"></div>                                              
+       51 -                                                                                                      
+       36 +  <!-- ===================================================================== -->                      
+       37 +  <!-- HERO                                                                    -->                    
+       38 +  <!-- ===================================================================== -->                      
+       39 +  <section class="hero">                                                                              
+       40 +    <canvas class="hero-scene" data-scene="hero" aria-hidden="true"></canvas>                         
+       41      <div class="hero-inner">
+       53 -      <div class="eyebrow glass-chip reveal">                                                         
+       54 -        <span class="dot"></span> V − E + F = 2                                                       
+       55 -      </div>                                                                                          
+       56 -                                                                                                      
+       57 -      <h1 class="hero-title reveal">                                                                  
+       58 -        <span class="line grad-text">Athena</span>                                                    
+       59 -      </h1>                                                                                           
+       60 -                                                                                                      
+       61 -      <p class="hero-sub reveal">A 3D rendering tool for geometric solids.</p>                        
+       62 -                                                                                                      
+       63 -      <div class="hero-cta reveal">                                                                   
+       64 -        <a href="#showcase" class="btn btn-accent btn-lg">Showcase</a>                                
+       65 -        <a href="#solids" class="btn btn-ghost btn-lg">Catalog</a>                                    
+       66 -      </div>                                                                                          
+       67 -                                                                                                      
+       68 -      <ul class="hero-stats reveal" aria-label="Counts">                                              
+       69 -        <li class="glass stat"><b data-count="47">47</b><span>Solids</span></li>                      
+       42 +      <span class="eyebrow reveal">Algorithmic visualization language</span>                          
+       43 +      <h1 class="reveal d1">Athena</h1>                                                               
+       44 +      <p class="hero-tag reveal d2">A grammar for geometry —                                          
+       45 +        <em>primitives, operators, and motion.</em></p>                                               
+       46 +      <p class="hero-sub reveal d2">Solids are the nouns. Operators are the verbs.                    
+       47 +        Spin, spread, aura and trail are the syntax that puts them in motion.</p>                     
+       48 +      <ul class="specs reveal d3">                                                                    
+       49 +        <li class="glass stat"><b data-count="47">47</b><span>Primitives</span></li>                  
+       50          <li class="glass stat"><b data-count="6">6</b><span>Families</span></li>
+       71 -        <li class="glass stat"><b data-count="60">60</b><span>FPS</span></li>                         
+       51 +        <li class="glass stat"><b data-count="5">5</b><span>Operators</span></li>                     
+       52          <li class="glass stat"><b data-count="0">0</b><span>Dependencies</span></li>
+       53        </ul>
+       54      </div>
+       75 -                                                                                                      
+       76 -    <div class="scroll-hint" aria-hidden="true"><span></span></div>                                   
+       55 +    <div class="scroll-cue" aria-hidden="true"><span></span>Scroll</div>                              
+       56    </section>
+       57  
+       79 -  <!-- Showcase (cinematic) ----------------------------------------------->                          
+       80 -  <section class="cine" id="showcase">                                                                
+       58 +  <!-- ===================================================================== -->                      
+       59 +  <!-- CINEMATIC BAND — complex OBB                                            -->                    
+       60 +  <!-- ===================================================================== -->                      
+       61 +  <section class="cine">                                                                              
+       62      <canvas class="cine-canvas" data-scene="showcase" aria-hidden="true"></canvas>
+       82 -    <div class="cine-fx" aria-hidden="true"></div>                                                    
+       83 -    <div class="cine-inner">                                                                          
+       84 -      <p class="kicker reveal">OBB shells</p>                                                         
+       85 -      <h2 class="reveal">Nested cages.<br /><span class="grad-text">Trails of light.</span></h2>      
+       86 -      <p class="lede center reveal">                                                                  
+       87 -        Concentric wireframe shells — cube, dodecahedron, icosahedron, octahedron —                   
+       88 -        counter-rotating around a color-spread icosahedron, with satellites on orbits.                
+       89 -      </p>                                                                                            
+       90 -      <div class="cine-tags reveal">                                                                  
+       91 -        <span class="glass-chip">7 OBB shells</span>                                                  
+       92 -        <span class="glass-chip">4 satellites</span>                                                  
+       93 -        <span class="glass-chip">counter-rotation</span>                                              
+       94 -        <span class="glass-chip">particle field</span>                                                
+       95 -      </div>                                                                                          
+       63 +    <div class="cine-copy reveal">                                                                    
+       64 +      <h2 class="grad">Geometry, evaluated live</h2>                                                  
+       65 +      <p>Concentric oriented cages — OBB auras — counter-rotate around a colour-spread                
+       66 +        core. Every frame is a term in the language, drawn as it is read.</p>                         
+       67      </div>
+       68    </section>
+       69  
+       99 -  <!-- Marquee (shape names) ---------------------------------------------->                          
+      100 -  <div class="marquee" aria-hidden="true">                                                            
+      101 -    <div class="marquee-track">                                                                       
+      102 -      <span>Tetrahedron</span><span>•</span><span>Icosahedron</span><span>•</span>                    
+      103 -      <span>Truncated Icosahedron</span><span>•</span><span>Rhombic Triacontahedron</span><span>•</spa
+          -n>                                                                                                    
+      104 -      <span>Great Dodecahedron</span><span>•</span><span>Pentagonal Cupola</span><span>•</span>       
+      105 -      <span>Cuboctahedron</span><span>•</span><span>Small Stellated Dodecahedron</span><span>•</span> 
+      106 -      <span>Chamfered Dodecahedron</span><span>•</span><span>Octahedron</span><span>•</span>          
+      107 -      <span>Tetrahedron</span><span>•</span><span>Icosahedron</span><span>•</span>                    
+      108 -      <span>Truncated Icosahedron</span><span>•</span><span>Rhombic Triacontahedron</span><span>•</spa
+          -n>                                                                                                    
+      109 -      <span>Great Dodecahedron</span><span>•</span><span>Pentagonal Cupola</span><span>•</span>       
+      110 -      <span>Cuboctahedron</span><span>•</span><span>Small Stellated Dodecahedron</span><span>•</span> 
+      111 -      <span>Chamfered Dodecahedron</span><span>•</span><span>Octahedron</span><span>•</span>          
+      112 -    </div>                                                                                            
+      113 -  </div>                                                                                              
+       70 +  <!-- ===================================================================== -->                      
+       71 +  <!-- PRIMITIVES (catalog / families)                                        -->                     
+       72 +  <!-- ===================================================================== -->                      
+       73 +  <section id="primitives">                                                                           
+       74 +    <div class="wrap">                                                                                
+       75 +      <div class="sec-head">                                                                          
+       76 +        <span class="eyebrow reveal">The nouns</span>                                                 
+       77 +        <h2 class="reveal d1">Primitives</h2>                                                         
+       78 +        <p class="reveal d2">Forty-seven solids across six families — the literals of the             
+       79 +          language. Choose a family to evaluate it.</p>                                               
+       80 +      </div>                                                                                          
+       81  
+      115 -  <!-- Solids / catalog --------------------------------------------------->                          
+      116 -  <section class="section" id="solids">                                                               
+      117 -    <div class="section-head reveal">                                                                 
+      118 -      <p class="kicker">Catalog</p>                                                                   
+      119 -      <h2>47 solids · 6 families</h2>                                                                 
+      120 -      <p class="lede">dual · ambo · truncate · kis · chamfer — Conway operators derive every solid fro
+          -m the Platonic seeds.</p>                                                                             
+      121 -    </div>                                                                                            
+       82 +      <div class="catalog-grid">                                                                      
+       83 +        <div class="solids-stage glass reveal">                                                       
+       84 +          <canvas id="catalog-scene" class="catalog-scene" data-scene="catalog" aria-hidden="true"></c
+          +anvas>                                                                                                
+       85 +          <div class="stage-readout glass">                                                           
+       86 +            <span class="readout-name" id="readout-name">Platonic family</span>                       
+       87 +            <span class="readout-meta" id="readout-meta">5 regular, congruent faces</span>            
+       88 +          </div>                                                                                      
+       89 +        </div>                                                                                        
+       90  
+      123 -    <div class="solids-layout">                                                                       
+      124 -      <div class="solids-stage">                                                                      
+      125 -        <canvas id="catalog-scene" class="catalog-scene" data-scene="catalog" aria-hidden="true"></can
+          -vas>                                                                                                  
+      126 -        <div class="stage-ring" aria-hidden="true"></div>                                             
+      127 -        <div class="stage-readout glass">                                                             
+      128 -          <span class="readout-name" id="readout-name">Icosahedron</span>                             
+      129 -          <span class="readout-meta" id="readout-meta">20 faces · 30 edges · 12 vertices</span>       
+       91 +        <div class="family-list reveal d1">                                                           
+       92 +          <button class="family glass" data-solid="icosahedron" data-info="5 · regular, congruent face
+          +s" style="--fam:#4bb3a6">                                                                             
+       93 +            <span class="family-dot"></span>                                                          
+       94 +            <span class="family-text"><b>Platonic</b><i>regular · congruent faces</i></span>          
+       95 +            <span class="family-n">5</span>                                                           
+       96 +          </button>                                                                                   
+       97 +          <button class="family glass" data-solid="truncatedIcosahedron" data-info="11 · truncate · am
+          +bo of Platonics" style="--fam:#6478c4">                                                               
+       98 +            <span class="family-dot"></span>                                                          
+       99 +            <span class="family-text"><b>Archimedean</b><i>truncate · ambo</i></span>                 
+      100 +            <span class="family-n">11</span>                                                          
+      101 +          </button>                                                                                   
+      102 +          <button class="family glass" data-solid="dodecahedron" data-info="11 · dual(Archimedean)" st
+          +yle="--fam:#8f74c2">                                                                                  
+      103 +            <span class="family-dot"></span>                                                          
+      104 +            <span class="family-text"><b>Catalan</b><i>dual(Archimedean)</i></span>                   
+      105 +            <span class="family-n">11</span>                                                          
+      106 +          </button>                                                                                   
+      107 +          <button class="family glass" data-solid="octahedron" data-info="4 · star polyhedra · kis" st
+          +yle="--fam:#c071a0">                                                                                  
+      108 +            <span class="family-dot"></span>                                                          
+      109 +            <span class="family-text"><b>Kepler–Poinsot</b><i>star polyhedra · kis</i></span>         
+      110 +            <span class="family-n">4</span>                                                           
+      111 +          </button>                                                                                   
+      112 +          <button class="family glass" data-solid="cube" data-info="3 · chamfer · GP(m,n)" style="--fa
+          +m:#c9a85e">                                                                                           
+      113 +            <span class="family-dot"></span>                                                          
+      114 +            <span class="family-text"><b>Goldberg</b><i>chamfer · GP(m,n)</i></span>                  
+      115 +            <span class="family-n">3</span>                                                           
+      116 +          </button>                                                                                   
+      117 +          <button class="family glass" data-solid="tetrahedron" data-info="13 · regular faces, non-uni
+          +form" style="--fam:#74c79e">                                                                          
+      118 +            <span class="family-dot"></span>                                                          
+      119 +            <span class="family-text"><b>Johnson</b><i>regular faces · non-uniform</i></span>         
+      120 +            <span class="family-n">13</span>                                                          
+      121 +          </button>                                                                                   
+      122          </div>
+      123        </div>
+      124 +    </div>                                                                                            
+      125 +  </section>                                                                                          
+      126  
+      133 -      <div class="family-list reveal">                                                                
+      134 -        <button class="family glass" data-solid="icosahedron" data-family="Platonic" data-count="5" da
+          -ta-info="20 faces · 30 edges · 12 vertices" style="--fam:#4bb3a6">                                    
+      135 -          <span class="family-dot"></span>                                                            
+      136 -          <span class="family-text"><b>Platonic</b><i>regular, congruent faces</i></span>             
+      137 -          <span class="family-n">5</span>                                                             
+      138 -        </button>                                                                                     
+      139 -        <button class="family glass" data-solid="truncatedIcosahedron" data-family="Archimedean" data-
+          -count="11" data-info="32 faces · 90 edges · 60 vertices" style="--fam:#6478c4">                       
+      140 -          <span class="family-dot"></span>                                                            
+      141 -          <span class="family-text"><b>Archimedean</b><i>truncate · ambo</i></span>                   
+      142 -          <span class="family-n">11</span>                                                            
+      143 -        </button>                                                                                     
+      144 -        <button class="family glass" data-solid="dodecahedron" data-family="Catalan" data-count="11" d
+          -ata-info="duals of the Archimedeans" style="--fam:#8f74c2">                                           
+      145 -          <span class="family-dot"></span>                                                            
+      146 -          <span class="family-text"><b>Catalan</b><i>dual(Archimedean)</i></span>                     
+      147 -          <span class="family-n">11</span>                                                            
+      148 -        </button>                                                                                     
+      149 -        <button class="family glass" data-solid="octahedron" data-family="Kepler–Poinsot" data-count="
+          -4" data-info="regular star polyhedra" style="--fam:#c071a0">                                          
+      150 -          <span class="family-dot"></span>                                                            
+      151 -          <span class="family-text"><b>Kepler–Poinsot</b><i>star polyhedra · kis</i></span>           
+      152 -          <span class="family-n">4</span>                                                             
+      153 -        </button>                                                                                     
+      154 -        <button class="family glass" data-solid="cube" data-family="Goldberg" data-count="3" data-info
+          -="chamfer · GP(m,n)" style="--fam:#c9a85e">                                                           
+      155 -          <span class="family-dot"></span>                                                            
+      156 -          <span class="family-text"><b>Goldberg</b><i>chamfer · GP(m,n)</i></span>                    
+      157 -          <span class="family-n">3</span>                                                             
+      158 -        </button>                                                                                     
+      159 -        <button class="family glass" data-solid="tetrahedron" data-family="Johnson" data-count="13" da
+          -ta-info="pyramids · cupolas · bipyramids" style="--fam:#74c79e">                                      
+      160 -          <span class="family-dot"></span>                                                            
+      161 -          <span class="family-text"><b>Johnson</b><i>regular faces, non-uniform</i></span>            
+      162 -          <span class="family-n">13</span>                                                            
+      163 -        </button>                                                                                     
+      127 +  <!-- ===================================================================== -->                      
+      128 +  <!-- OPERATORS (Conway grammar)                                             -->                     
+      129 +  <!-- ===================================================================== -->                      
+      130 +  <section id="operators">                                                                            
+      131 +    <div class="wrap">                                                                                
+      132 +      <div class="sec-head">                                                                          
+      133 +        <span class="eyebrow reveal">The grammar</span>                                               
+      134 +        <h2 class="reveal d1">Operators</h2>                                                          
+      135 +        <p class="reveal d2">Five Conway operators rewrite one solid into another.                    
+      136 +          From four hand-typed seeds, the grammar generates the entire catalog.</p>                   
+      137        </div>
+      138 +                                                                                                      
+      139 +      <div class="ops">                                                                               
+      140 +        <div class="op glass tilt reveal"><div class="op-inner">                                      
+      141 +          <div class="glyph">d</div><h3>dual</h3>                                                     
+      142 +          <p>Swap faces for vertices. <code>dual(icosa) → dodeca</code>.</p>                          
+      143 +        </div></div>                                                                                  
+      144 +        <div class="op glass tilt reveal d1"><div class="op-inner">                                   
+      145 +          <div class="glyph">a</div><h3>ambo</h3>                                                     
+      146 +          <p>Rectify to edge midpoints. The cuboctahedral path.</p>                                   
+      147 +        </div></div>                                                                                  
+      148 +        <div class="op glass tilt reveal d2"><div class="op-inner">                                   
+      149 +          <div class="glyph">t</div><h3>truncate</h3>                                                 
+      150 +          <p>Slice every vertex. <code>t(icosa) → buckyball</code>.</p>                               
+      151 +        </div></div>                                                                                  
+      152 +        <div class="op glass tilt reveal d1"><div class="op-inner">                                   
+      153 +          <div class="glyph">k</div><h3>kis</h3>                                                      
+      154 +          <p>Raise a pyramid on each face. Stellation, the star path.</p>                             
+      155 +        </div></div>                                                                                  
+      156 +        <div class="op glass tilt reveal d2"><div class="op-inner">                                   
+      157 +          <div class="glyph">c</div><h3>chamfer</h3>                                                  
+      158 +          <p>Bevel each edge into a hexagon. The Goldberg path.</p>                                   
+      159 +        </div></div>                                                                                  
+      160 +      </div>                                                                                          
+      161      </div>
+      162    </section>
+      163  
+      168 -  <!-- Functions (effects) ------------------------------------------------>                          
+      169 -  <section class="section" id="effects">                                                              
+      170 -    <div class="section-head reveal">                                                                 
+      171 -      <p class="kicker">Functions</p>                                                                 
+      172 -      <h2>spin · spread · explode · aura · trail · group</h2>                                         
+      173 -    </div>                                                                                            
+      164 +  <!-- ===================================================================== -->                      
+      165 +  <!-- MOTION (effects as syntax)                                             -->                     
+      166 +  <!-- ===================================================================== -->                      
+      167 +  <section id="motion">                                                                               
+      168 +    <div class="wrap">                                                                                
+      169 +      <div class="sec-head">                                                                          
+      170 +        <span class="eyebrow reveal">The syntax</span>                                                
+      171 +        <h2 class="reveal d1">Motion</h2>                                                             
+      172 +        <p class="reveal d2">Effects compose over any primitive — colour, light, and time             
+      173 +          as terms you can layer. This is the language in motion.</p>                                 
+      174 +      </div>                                                                                          
+      175  
+      175 -    <div class="cards">                                                                               
+      176 -      <article class="card glass tilt reveal">                                                        
+      177 -        <div class="card-demo"><canvas data-scene="card" data-solid="cube" data-effect="spin" aria-hid
+          -den="true"></canvas></div>                                                                            
+      178 -        <div class="card-body">                                                                       
+      179 -          <h3><span class="card-ico" style="--c:#c06a6a">↻</span> Spin</h3>                           
+      180 -          <p>Per-object and group rotation about the centroid.</p>                                    
+      181 -        </div>                                                                                        
+      182 -      </article>                                                                                      
+      176 +      <div class="grid cols-3">                                                                       
+      177 +        <article class="card glass tilt reveal">                                                      
+      178 +          <div class="card-demo"><span class="card-tag">spin</span>                                   
+      179 +            <canvas data-scene="card" data-solid="icosahedron" data-effect="spin" aria-hidden="true"><
+          +/canvas></div>                                                                                        
+      180 +          <div class="card-body"><h3>Spin</h3>                                                        
+      181 +            <p>Continuous rotation about any axis, per object or per group.</p></div>                 
+      182 +        </article>                                                                                    
+      183  
+      184 -      <article class="card glass tilt reveal">                                                        
+      185 -        <div class="card-demo"><canvas data-scene="card" data-solid="icosahedron" data-effect="rainbow
+          -" aria-hidden="true"></canvas></div>                                                                  
+      186 -        <div class="card-body">                                                                       
+      187 -          <h3><span class="card-ico" style="--c:#6478c4">◑</span> Color spread</h3>                   
+      188 -          <p>HSV gradient by index · golden-angle rainbow.</p>                                        
+      189 -        </div>                                                                                        
+      190 -      </article>                                                                                      
+      184 +        <article class="card glass tilt reveal d1">                                                   
+      185 +          <div class="card-demo"><span class="card-tag">spread</span>                                 
+      186 +            <canvas data-scene="card" data-solid="dodecahedron" data-effect="rainbow" aria-hidden="tru
+          +e"></canvas></div>                                                                                    
+      187 +          <div class="card-body"><h3>Colour spread</h3>                                               
+      188 +            <p>An HSV gradient flows across faces from first to last.</p></div>                       
+      189 +        </article>                                                                                    
+      190  
+      192 -      <article class="card glass tilt reveal">                                                        
+      193 -        <div class="card-demo"><canvas data-scene="card" data-solid="octahedron" data-effect="explode"
+          - aria-hidden="true"></canvas></div>                                                                   
+      194 -        <div class="card-body">                                                                       
+      195 -          <h3><span class="card-ico" style="--c:#c9a85e">✺</span> Explode</h3>                        
+      196 -          <p>Faces translated along their normals.</p>                                                
+      197 -        </div>                                                                                        
+      198 -      </article>                                                                                      
+      191 +        <article class="card glass tilt reveal d2">                                                   
+      192 +          <div class="card-demo"><span class="card-tag">aura</span>                                   
+      193 +            <canvas data-scene="card" data-solid="icosahedron" data-effect="aura" aria-hidden="true"><
+          +/canvas></div>                                                                                        
+      194 +          <div class="card-body"><h3>OBB aura</h3>                                                    
+      195 +            <p>Nested oriented cages of mixed shape, counter-rotating in shells.</p></div>            
+      196 +        </article>                                                                                    
+      197  
+      200 -      <article class="card glass tilt reveal feature-aura">                                           
+      201 -        <div class="card-demo"><canvas data-scene="card" data-solid="tetrahedron" data-effect="aura" a
+          -ria-hidden="true"></canvas></div>                                                                     
+      202 -        <div class="card-body">                                                                       
+      203 -          <h3><span class="card-ico" style="--c:#4bb3a6">◎</span> Aura</h3>                           
+      204 -          <p>Concentric wireframe shells (OBB), counter-rotating.</p>                                 
+      205 -        </div>                                                                                        
+      206 -      </article>                                                                                      
+      198 +        <article class="card glass tilt reveal">                                                      
+      199 +          <div class="card-demo"><span class="card-tag">trail</span>                                  
+      200 +            <canvas data-scene="card" data-solid="octahedron" data-effect="trail" aria-hidden="true"><
+          +/canvas></div>                                                                                        
+      201 +          <div class="card-body"><h3>Particle trail</h3>                                              
+      202 +            <p>Luminous ribbons stream behind a body as it orbits.</p></div>                          
+      203 +        </article>                                                                                    
+      204  
+      208 -      <article class="card glass tilt reveal">                                                        
+      209 -        <div class="card-demo"><canvas data-scene="card" data-solid="dodecahedron" data-effect="trail"
+          - aria-hidden="true"></canvas></div>                                                                   
+      210 -        <div class="card-body">                                                                       
+      211 -          <h3><span class="card-ico" style="--c:#8f74c2">✧</span> Trail</h3>                          
+      212 -          <p>Particle streak of the position history.</p>                                             
+      213 -        </div>                                                                                        
+      214 -      </article>                                                                                      
+      205 +        <article class="card glass tilt reveal d1">                                                   
+      206 +          <div class="card-demo"><span class="card-tag">explode</span>                                
+      207 +            <canvas data-scene="card" data-solid="cube" data-effect="explode" aria-hidden="true"></can
+          +vas></div>                                                                                            
+      208 +          <div class="card-body"><h3>Explode</h3>                                                     
+      209 +            <p>Faces push out along their normals — anatomy of a solid.</p></div>                     
+      210 +        </article>                                                                                    
+      211  
+      216 -      <article class="card glass tilt reveal">                                                        
+      217 -        <div class="card-demo"><canvas data-scene="card" data-effect="groups" aria-hidden="true"></can
+          -vas></div>                                                                                            
+      218 -        <div class="card-body">                                                                       
+      219 -          <h3><span class="card-ico" style="--c:#74c79e">▦</span> Group</h3>                          
+      220 -          <p>Independent layers, each with its own state.</p>                                         
+      221 -        </div>                                                                                        
+      222 -      </article>                                                                                      
+      212 +        <article class="card glass tilt reveal d2">                                                   
+      213 +          <div class="card-demo"><span class="card-tag">group</span>                                  
+      214 +            <canvas data-scene="card" data-effect="groups" aria-hidden="true"></canvas></div>         
+      215 +          <div class="card-body"><h3>Groups</h3>                                                      
+      216 +            <p>Many bodies, each its own state, evaluated in one scene.</p></div>                     
+      217 +        </article>                                                                                    
+      218 +      </div>                                                                                          
+      219      </div>
+      220    </section>
+      221  
+      226 -  <!-- Trails (cinematic band) -------------------------------------------->                          
+      227 -  <section class="cine cine-band" id="trails">                                                        
+      222 +  <!-- ===================================================================== -->                      
+      223 +  <!-- CINEMATIC OUTRO — trails field                                          -->                    
+      224 +  <!-- ===================================================================== -->                      
+      225 +  <section class="cine">                                                                              
+      226      <canvas class="cine-canvas" data-scene="trails" aria-hidden="true"></canvas>
+      229 -    <div class="cine-fx cine-fx-2" aria-hidden="true"></div>                                          
+      230 -    <div class="cine-inner">                                                                          
+      231 -      <p class="kicker reveal">Trails</p>                                                             
+      232 -      <h2 class="reveal">Position <span class="grad-text">history.</span></h2>                        
+      233 -      <p class="lede center reveal">                                                                  
+      234 -        Particle systems trace each object as it travels — tapering with age,                         
+      235 -        cycling the hue.                                                                              
+      236 -      </p>                                                                                            
+      227 +    <div class="cine-copy reveal">                                                                    
+      228 +      <h2 class="grad">A scene is a sentence</h2>                                                     
+      229 +      <p>Compose primitives, apply operators, set them in motion. The language                        
+      230 +        renders the result — sixty frames a second, no dependencies.</p>                              
+      231      </div>
+      232    </section>
+      233  
+      240 -  <!-- Controls ----------------------------------------------------------->                          
+      241 -  <section class="section section-split" id="interface">                                              
+      242 -    <div class="split-copy reveal">                                                                   
+      243 -      <p class="kicker">Controls</p>                                                                  
+      244 -      <h2>orbit · pinch · drag</h2>                                                                   
+      245 -      <ul class="checklist">                                                                          
+      246 -        <li><span>✓</span> Orbit, pinch-zoom, hold-to-move</li>                                       
+      247 -        <li><span>✓</span> Stackable effect panels</li>                                               
+      248 -        <li><span>✓</span> Clean view — hide all chrome</li>                                          
+      249 -        <li><span>✓</span> Save / load · 50-step undo</li>                                            
+      250 -      </ul>                                                                                           
+      251 -    </div>                                                                                            
+      252 -                                                                                                      
+      253 -    <div class="split-visual reveal">                                                                 
+      254 -      <div class="device glass">                                                                      
+      255 -        <div class="device-canvas">                                                                   
+      256 -          <canvas data-scene="card" data-solid="icosahedron" data-effect="aura" aria-hidden="true"></c
+          -anvas>                                                                                                
+      257 -        </div>                                                                                        
+      258 -        <div class="tool-strip glass">                                                                
+      259 -          <span class="tool" style="--c:#8f74c2">◆</span>                                             
+      260 -          <span class="tool" style="--c:#c06a6a">↻</span>                                             
+      261 -          <span class="tool" style="--c:#6478c4">◑</span>                                             
+      262 -          <span class="tool" style="--c:#c9a85e">✺</span>                                             
+      263 -          <span class="tool active" style="--c:#4bb3a6">◎</span>                                      
+      264 -          <span class="tool" style="--c:#8f74c2">✧</span>                                             
+      265 -          <span class="tool" style="--c:#74c79e">▦</span>                                             
+      266 -        </div>                                                                                        
+      267 -        <div class="float-panel glass">                                                               
+      268 -          <header style="--c:#4bb3a6">Aura</header>                                                   
+      269 -          <div class="row"><label>Layers</label><div class="track"><i style="width:62%"></i></div></di
+          -v>                                                                                                    
+      270 -          <div class="row"><label>Spacing</label><div class="track"><i style="width:44%"></i></div></d
+          -iv>                                                                                                   
+      271 -          <div class="row"><label>Glow</label><div class="track"><i style="width:78%"></i></div></div>
+      272 -        </div>                                                                                        
+      273 -      </div>                                                                                          
+      274 -    </div>                                                                                            
+      275 -  </section>                                                                                          
+      276 -                                                                                                      
+      277 -  <!-- Capture ------------------------------------------------------------>                          
+      278 -  <section class="section" id="capture">                                                              
+      279 -    <div class="section-head reveal">                                                                 
+      280 -      <p class="kicker">Capture</p>                                                                   
+      281 -      <h2>PNG · H.264</h2>                                                                            
+      282 -    </div>                                                                                            
+      283 -    <div class="capture-grid">                                                                        
+      284 -      <article class="cap glass big reveal">                                                          
+      285 -        <div class="cap-view">                                                                        
+      286 -          <canvas data-scene="card" data-solid="dodecahedron" data-effect="rainbow" aria-hidden="true"
+          -></canvas>                                                                                            
+      287 -          <div class="viewfinder"><span></span><span></span><span></span><span></span><em class="rec">
+          -● REC</em></div>                                                                                      
+      288 -        </div>                                                                                        
+      289 -        <div class="cap-text">                                                                        
+      290 -          <h3>Still · video</h3>                                                                      
+      291 -          <p>Off-screen high-resolution PNG; H.264 at 30 fps.</p>                                     
+      292 -        </div>                                                                                        
+      293 -      </article>                                                                                      
+      294 -      <article class="cap glass reveal">                                                              
+      295 -        <h3>SD · HD · Ultra</h3>                                                                      
+      296 -        <p>1× → 4× MSAA → 1.5× supersample.</p>                                                       
+      297 -      </article>                                                                                      
+      298 -      <article class="cap glass reveal">                                                              
+      299 -        <h3>Lighting</h3>                                                                             
+      300 -        <p>Key azimuth · elevation · fill · ambient.</p>                                              
+      301 -      </article>                                                                                      
+      302 -    </div>                                                                                            
+      303 -  </section>                                                                                          
+      304 -                                                                                                      
+      305 -  <!-- CTA ---------------------------------------------------------------->                          
+      306 -  <section class="section cta" id="get">                                                              
+      307 -    <div class="cta-card glass reveal">                                                               
+      308 -      <canvas data-scene="card" data-solid="icosahedron" data-effect="aura" class="cta-bg" aria-hidden
+          -="true"></canvas>                                                                                     
+      309 -      <div class="cta-inner">                                                                         
+      310 -        <h2 class="grad-text">Athena</h2>                                                             
+      311 -        <p>A 3D rendering tool for geometric solids.</p>                                              
+      312 -        <div class="hero-cta">                                                                        
+      313 -          <a href="#showcase" class="btn btn-accent btn-lg">Showcase</a>                              
+      314 -          <a href="#top" class="btn btn-ghost btn-lg">Top ↑</a>                                       
+      315 -        </div>                                                                                        
+      316 -      </div>                                                                                          
+      317 -    </div>                                                                                            
+      318 -  </section>                                                                                          
+      319 -                                                                                                      
+      234  </main>
+      235  
+      322 -<footer class="footer">                                                                               
+      323 -  <div class="footer-inner">                                                                          
+      324 -    <a class="brand" href="#top">                                                                     
+      325 -      <canvas class="brand-mark" data-scene="brand" width="36" height="36" aria-hidden="true"></canvas
+          ->                                                                                                     
+      326 -      <span class="brand-name">Athena</span>                                                          
+      327 -    </a>                                                                                              
+      328 -    <p class="footer-tag">A 3D rendering tool for geometric solids · SwiftUI + SceneKit.</p>          
+      329 -    <p class="footer-fine">Platonic · Archimedean · Catalan · Kepler–Poinsot · Goldberg · Johnson.</p>
+      330 -  </div>                                                                                              
+      236 +<footer>                                                                                              
+      237 +  <div class="foot-mark">Athena</div>                                                                 
+      238 +  <p class="foot-line">An algorithmic visualization language.</p>                                     
+      239 +  <p class="foot-meta">primitives · operators · motion &nbsp;·&nbsp; <span class="phi">φ = 1.618033988
+          +7</span></p>                                                                                          
+      240  </footer>
+      241  
+      242  <script src="main.js" defer></script>
 
